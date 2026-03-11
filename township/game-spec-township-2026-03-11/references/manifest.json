@@ -1,0 +1,89 @@
+{
+  "source_video": "township.mp4",
+  "created_at": "2026-03-11T16:30:00+09:00",
+  "game_name": "Township",
+  "categories": {
+    "art-style": [
+      {
+        "file": "../images/frame-021.png",
+        "description": "밝고 따뜻한 색감의 이소메트릭 타운 전경. 초록 잔디, 파란 바다, 다양한 건물이 조화를 이루는 카툰 스타일.",
+        "tags": ["isometric", "cartoon", "warm-colors", "town-builder", "aaa-mobile"]
+      },
+      {
+        "file": "../images/frame-017.png",
+        "description": "Match-3 퍼즐 게임플레이. 밝은 정원 배경에 빨강/초록/노랑/파랑 블록. 둥글고 친근한 디자인.",
+        "tags": ["match-3", "colorful", "casual", "puzzle"]
+      }
+    ],
+    "ui-layout": [
+      {
+        "file": "../images/frame-021.png",
+        "description": "메인 타운 뷰 HUD 레이아웃. 상단 레벨/코인/T-캐시, 좌측 이벤트 타이머, 하단 네비게이션 바 5버튼.",
+        "tags": ["hud", "navigation", "landscape", "bottom-bar"]
+      },
+      {
+        "file": "../images/frame-017.png",
+        "description": "Match-3 게임 UI. 좌측 무브 카운터, 우측 목표 아이콘 패널, 상단 설정 기어.",
+        "tags": ["puzzle-ui", "moves-counter", "goal-panel"]
+      },
+      {
+        "file": "../images/frame-016.png",
+        "description": "공장 생산 모달 UI. 파스트리 팩토리 슬롯, 제품 선택 캐러셀, 확장 버튼.",
+        "tags": ["modal", "factory", "production-slots"]
+      }
+    ],
+    "characters": [
+      {
+        "file": "../images/frame-011.png",
+        "description": "스토리 캐릭터 Rachel. 갈색 재킷, 파란 헤드폰, 놀란 표정. 옆에 검은 개와 새장.",
+        "tags": ["npc", "rachel", "story-character", "dialogue"]
+      },
+      {
+        "file": "../images/frame-018.png",
+        "description": "헬리콥터 패드 NPC 아바타들. 8명+ 고유 마을 주민 초상화, 다양한 외모/의상.",
+        "tags": ["npc", "villagers", "avatars", "order-system"]
+      }
+    ],
+    "backgrounds": [
+      {
+        "file": "../images/frame-020.png",
+        "description": "해안 도시 전경. 항구, 보트, 섬, 파란 바다. 다양한 건물 밀집 지역.",
+        "tags": ["coastal", "harbor", "ocean", "city-view"]
+      },
+      {
+        "file": "../images/frame-009.png",
+        "description": "안개/구름으로 덮인 미탐험 지역. 광산 입구 보이며, 산과 소나무 배경.",
+        "tags": ["fog", "unexplored", "mountain", "pine-trees"]
+      }
+    ],
+    "effects": [
+      {
+        "file": "../images/frame-005.png",
+        "description": "컨페티 버스트 이펙트. 레가타 리더보드 위에 멀티컬러 파티클 흩뿌림.",
+        "tags": ["confetti", "celebration", "particle", "multi-color"]
+      },
+      {
+        "file": "../images/frame-002.png",
+        "description": "별 보상 애니메이션. 두 개의 금색 별이 화면 중앙에 떠 있는 모습.",
+        "tags": ["star", "reward", "animation", "gold"]
+      }
+    ],
+    "items": [
+      {
+        "file": "../images/frame-017.png",
+        "description": "Match-3 블록 조각들. 빨강/초록/노랑/파랑 기본 블록 + 도토리/코인/레인보우볼 특수 조각.",
+        "tags": ["match-3-pieces", "colored-blocks", "special-items"]
+      },
+      {
+        "file": "../images/frame-016.png",
+        "description": "제빵 제품들. 머핀, 빵, 케이크, 쿠키 등 다양한 베이커리 아이템 아이콘.",
+        "tags": ["products", "bakery", "food-icons", "factory-output"]
+      },
+      {
+        "file": "../images/frame-004.png",
+        "description": "타운 카드 팩. 주황색 포장지에 'Town Cards!' 로고. 가차 시스템 아이템.",
+        "tags": ["gacha", "card-pack", "collectible"]
+      }
+    ]
+  }
+}
