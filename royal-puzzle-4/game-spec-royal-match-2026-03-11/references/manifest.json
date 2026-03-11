@@ -1,0 +1,109 @@
+{
+  "source_video": "royal_match.mp4",
+  "created_at": "2026-03-11T12:00:00+09:00",
+  "game_name": "Royal Match",
+  "categories": {
+    "art-style": [
+      {
+        "file": "../images/frame-022.png",
+        "description": "Royal Match 홈 화면. 3D Castle 전경, 밝은 하늘 배경, 금+보라 색조의 중세 판타지 테마. 상단에 코인/라이프/별 HUD, 하단에 5탭 네비게이션.",
+        "tags": ["casual", "3d-rendered", "cartoon", "royal", "bright-colors", "fantasy"]
+      },
+      {
+        "file": "../images/frame-023.png",
+        "description": "Castle 클로즈업. 보라색 지붕, 금색 장식, 분수대, 정원, 호수와 산 배경. AAA 모바일 품질 3D 렌더링.",
+        "tags": ["castle", "3d", "environment", "detailed", "premium-quality"]
+      },
+      {
+        "file": "../images/frame-020.png",
+        "description": "Match-3 게임 보드. 궁전 내부 배경, 8x8 보드에 5색 타일(빨강 정사각형, 파랑 방패, 초록 잎, 노랑 왕관, 분홍 다이아). 부스터(Rocket, TNT, Light Ball) 보임.",
+        "tags": ["gameplay", "match-3", "board", "tiles", "boosters"]
+      }
+    ],
+    "ui-layout": [
+      {
+        "file": "../images/frame-015.png",
+        "description": "게임 HUD 레이아웃. 상단좌=Target(Mailbox 50), 상단중=King아바타, 상단우=Moves(28). 하단=5개 부스터 버튼(잠금). 체크무늬 바닥 배경.",
+        "tags": ["hud", "target", "moves", "booster-bar", "tutorial"]
+      },
+      {
+        "file": "../images/frame-022.png",
+        "description": "홈 화면 레이아웃. 상단바=코인/레벨/라이프/별/설정. 중앙=Castle. 하단좌=Nightmare버튼, 하단우=Area진행. 최하단=5탭 네비게이션.",
+        "tags": ["home", "navigation", "top-bar", "bottom-nav"]
+      },
+      {
+        "file": "../images/frame-013.png",
+        "description": "레벨 클리어 팝업. 'Well Done!' + 금별 + 빨간 쿠션 + Continue 버튼. 파란+금 프레임 패널.",
+        "tags": ["popup", "level-complete", "reward", "panel"]
+      }
+    ],
+    "characters": [
+      {
+        "file": "../images/frame-014.png",
+        "description": "King's Nightmare 패널. 왕이 침대에서 잠든 모습, 악몽의 드래곤 말풍선. 보라색 로브, 왕관, 갈색 반려동물. Play/Skip 버튼.",
+        "tags": ["king", "nightmare", "dragon", "companion", "illustration"]
+      },
+      {
+        "file": "../images/frame-016.png",
+        "description": "주방에서 King 전신 캐릭터. 보라 로브, 금 장식, 왕관 착용. 주방 배경. 시간 제한 모드 HUD.",
+        "tags": ["king", "full-body", "kitchen", "nightmare-mode"]
+      },
+      {
+        "file": "../images/frame-018.png",
+        "description": "던전에서 빨간 드래곤과 감옥에 갇힌 왕. 드래곤 크고 위협적, 왕 작고 걱정스러운 표정.",
+        "tags": ["dragon", "king", "dungeon", "rescue"]
+      }
+    ],
+    "backgrounds": [
+      {
+        "file": "../images/frame-023.png",
+        "description": "Castle 전체 뷰. 보라+금 성, 분수대, 정원, 호수, 산, 구름. 밝은 하늘 배경.",
+        "tags": ["castle", "garden", "sky", "mountains", "lake"]
+      },
+      {
+        "file": "../images/frame-019.png",
+        "description": "야외 정원 배경의 게임 보드. 잔디밭, 길, 성벽, 산, 호수, 하늘. 비정형 보드.",
+        "tags": ["garden", "outdoor", "landscape"]
+      },
+      {
+        "file": "../images/frame-020.png",
+        "description": "궁전 내부 배경. 기둥, 커튼, 화려한 인테리어.",
+        "tags": ["palace", "interior", "columns"]
+      }
+    ],
+    "effects": [
+      {
+        "file": "../images/frame-017.png",
+        "description": "레벨 시작 팬파어. 양쪽 나팔 + 중앙 불꽃놀이 + 'Royal Match!' 로고. 어두운 오버레이.",
+        "tags": ["fanfare", "fireworks", "trumpets", "logo", "level-start"]
+      },
+      {
+        "file": "../images/frame-018.png",
+        "description": "게임 보드에서 매치 이펙트 잔상. 얼음/결정 파편 파티클.",
+        "tags": ["match-effect", "particles", "crystal-shatter"]
+      }
+    ],
+    "items": [
+      {
+        "file": "../images/frame-005.png",
+        "description": "TNT 부스터 튜토리얼. T형 초록 타일 5개 → TNT 아이콘으로 변환.",
+        "tags": ["tnt", "booster", "tutorial", "t-shape"]
+      },
+      {
+        "file": "../images/frame-006.png",
+        "description": "Rocket 부스터 튜토리얼. 빨간 타일 4개 직선 → Rocket(줄무늬 구) 변환.",
+        "tags": ["rocket", "booster", "tutorial", "4-match"]
+      },
+      {
+        "file": "../images/frame-007.png",
+        "description": "Light Ball 부스터 튜토리얼. 분홍 다이아 5개 직선 → Light Ball(무지개 구) 변환.",
+        "tags": ["light-ball", "booster", "tutorial", "5-match"]
+      },
+      {
+        "file": "../images/frame-012.png",
+        "description": "Arrow 부스터 해금 화면. 'Unlocked! Arrow x3 — Clears all the objects in a row!'",
+        "tags": ["arrow", "booster", "unlock", "ui-booster"]
+      }
+    ]
+  }
+}
