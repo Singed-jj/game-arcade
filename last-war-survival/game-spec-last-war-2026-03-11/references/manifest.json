@@ -1,0 +1,94 @@
+{
+  "source_video": "last-war.mp4",
+  "created_at": "2026-03-11T17:45:00+09:00",
+  "game_name": "Last War: Survival",
+  "categories": {
+    "art-style": [
+      {
+        "file": "../images/frame-031.png",
+        "description": "풀 베이스 뷰 — 이소메트릭 기지 건설 화면. 다양한 건물, 도로, 병사, 리소스 UI가 모두 보이는 대표 화면.",
+        "tags": ["isometric", "base-building", "cartoon-3d", "full-ui"]
+      },
+      {
+        "file": "../images/frame-029.png",
+        "description": "Stage 19 전투 화면 — 히어로 카드 슬롯, 쿨다운 타이머, 투사체, 폭발 이펙트가 모두 보이는 배틀 대표 화면.",
+        "tags": ["battle", "hero-cards", "effects", "action"]
+      },
+      {
+        "file": "../images/frame-032.png",
+        "description": "다리 위 대규모 전투 — 대량 블루 헬멧 병사, 보스, 불/얼음 이펙트. 게임의 비주얼 피크.",
+        "tags": ["bridge-battle", "massive-army", "boss", "spectacle"]
+      }
+    ],
+    "ui-layout": [
+      {
+        "file": "../images/frame-031.png",
+        "description": "풀 UI 레이아웃 — 상단 리소스바, 하단 네비게이션 (HEROES/Inventory/WORLD), 얼라이언스 채팅.",
+        "tags": ["full-ui", "navigation", "resources", "base"]
+      },
+      {
+        "file": "../images/frame-017.png",
+        "description": "아레나 챌린지 라인업 + 다이아몬드 구매 팝업 — 모달 UI 패턴 레퍼런스.",
+        "tags": ["modal", "popup", "arena", "iap"]
+      },
+      {
+        "file": "../images/frame-022.png",
+        "description": "히어로 상세 화면 (Gump) — 스탯, 업그레이드 버튼, 탭 네비게이션.",
+        "tags": ["hero-detail", "stats", "upgrade", "tabs"]
+      }
+    ],
+    "characters": [
+      {
+        "file": "../images/frame-022.png",
+        "description": "히어로 Gump — 방독면, 붉은 복장, 무기 아이콘. 배틀필드 노바 타입.",
+        "tags": ["hero", "gump", "portrait", "full-body"]
+      },
+      {
+        "file": "../images/frame-023.png",
+        "description": "히어로 Monica SSR — 금발 군인, 오토바이, 고급 레어리티.",
+        "tags": ["hero", "monica", "ssr", "motorcycle"]
+      },
+      {
+        "file": "../images/frame-033.png",
+        "description": "좀비 보스 — 대형 회색 몬스터, 불비 속 전투.",
+        "tags": ["boss", "zombie", "monster", "endgame"]
+      }
+    ],
+    "backgrounds": [
+      {
+        "file": "../images/frame-024.png",
+        "description": "기지 오버뷰 — 초록 잔디 지형, 울타리, 건물 배치, 리소스 아이콘.",
+        "tags": ["base", "terrain", "green", "isometric"]
+      },
+      {
+        "file": "../images/frame-012.png",
+        "description": "X자 도로 교차로 — 잔디 + 모래 지형, 기지 건설 배경.",
+        "tags": ["crossroad", "terrain", "grass", "sand"]
+      }
+    ],
+    "effects": [
+      {
+        "file": "../images/frame-026.png",
+        "description": "프론트라인 전투 — 아이스 빔, 데미지 숫자(-98, 38), 블루 병사 대열.",
+        "tags": ["ice-beam", "damage-numbers", "frontline", "battle"]
+      },
+      {
+        "file": "../images/frame-032.png",
+        "description": "다리 위 불비 + 폭발 — 대량 파티클 이펙트, 보스 전투.",
+        "tags": ["fire-rain", "explosion", "particles", "boss-battle"]
+      }
+    ],
+    "items": [
+      {
+        "file": "../images/frame-010.png",
+        "description": "LASTWAR 카드팩 — 파란/보라 카드, 별 로고, 골든 글로우 슬롯.",
+        "tags": ["card-pack", "gacha", "recruit", "golden-glow"]
+      },
+      {
+        "file": "../images/frame-009.png",
+        "description": "히어로 샤드 (Kimberly) — 퍼즐 조각 형태, 히어로 초상화 포함.",
+        "tags": ["shard", "hero-material", "collection", "upgrade"]
+      }
+    ]
+  }
+}

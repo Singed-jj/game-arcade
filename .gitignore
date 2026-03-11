@@ -1,6 +1,15 @@
 # Godot
 .godot/
 dist/
+*.import
+*.uid
+
+# Game spec frames (large reference images)
+**/game-spec-*/images/
+**/game-spec-*/*/frames/
+
+# Stale spec directories
+**/game-spec-*date*/
 
 # OS
 .DS_Store

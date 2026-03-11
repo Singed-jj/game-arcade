@@ -12,3 +12,22 @@ config_version=5
 
 config/name="Last War Survival"
 config/features=PackedStringArray("4.4")
+run/main_scene="res://scenes/main.tscn"
+
+[autoload]
+
+SaveManager="*res://scripts/managers/save_manager.gd"
+GameManager="*res://scripts/managers/game_manager.gd"
+EventBus="*res://scripts/managers/event_bus.gd"
+
+[display]
+
+window/size/viewport_width=390
+window/size/viewport_height=844
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep_width"
+window/handheld/orientation=1
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
