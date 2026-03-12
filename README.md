@@ -6,6 +6,7 @@
 
 | 게임 | 설명 | 상태 |
 |------|------|------|
+| food-crush | Food Crush - Match-3 음식 퍼즐 (두잇 프로모션) | MVP 완료 |
 | royal-puzzle-4 | Royal Puzzle 시리즈 4탄 | 미착수 |
 | block-blast-2 | Block Blast 시리즈 2탄 | 미착수 |
 | township | Township 스타일 게임 | 미착수 |
