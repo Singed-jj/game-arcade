@@ -34,7 +34,7 @@ export const BOARD_COLS = 7
 export const BOARD_ROWS = 7
 export const BLOCK_TYPES_COUNT = 5
 export const MATCH_MIN = 3
-export const CELL_SIZE = 44 // px (와이어프레임 기준 34px 블록 + 3px 갭 ≈ 44px per cell area)
+export const CELL_SIZE = 48 // px (7*48=336px, 모바일 375px 화면에 여유 있게)
 
 /** 하트 시스템 */
 export const MAX_HEARTS = 3
@@ -48,13 +48,22 @@ export const PIECES_ON_CLEAR = 1
 export const STAR_3_THRESHOLD = 4
 export const STAR_2_THRESHOLD = 1
 
-/** 블록 색상 (파티클 이펙트용) */
+/** 블록 색상 (파티클/canvas용 - 단색) */
 export const BLOCK_COLORS: Record<BlockType, string> = {
-  [BlockType.CHICKEN]: '#F5A623',
-  [BlockType.COLA]: '#D0021B',
-  [BlockType.FRIES]: '#F8E71C',
-  [BlockType.BURGER]: '#8B572A',
-  [BlockType.PIZZA]: '#FF6B35',
+  [BlockType.CHICKEN]: '#fb923c',  // orange
+  [BlockType.COLA]:    '#f87171',  // red
+  [BlockType.FRIES]:   '#fbbf24',  // yellow
+  [BlockType.BURGER]:  '#a16207',  // brown
+  [BlockType.PIZZA]:   '#4ade80',  // green
+}
+
+/** 블록 배경 그라디언트 (CSS용) */
+export const BLOCK_GRADIENTS: Record<BlockType, string> = {
+  [BlockType.CHICKEN]: 'linear-gradient(145deg, #fb923c, #ea580c)',
+  [BlockType.COLA]:    'linear-gradient(145deg, #f87171, #dc2626)',
+  [BlockType.FRIES]:   'linear-gradient(145deg, #fbbf24, #d97706)',
+  [BlockType.BURGER]:  'linear-gradient(145deg, #b45309, #713f12)',
+  [BlockType.PIZZA]:   'linear-gradient(145deg, #4ade80, #16a34a)',
 }
 
 /** 블록 이미지 경로 */
@@ -68,6 +77,15 @@ export const BLOCK_IMAGES: Record<BlockType, string> = {
 
 /** 블록 이모지 (디버그/폴백) */
 export const BLOCK_EMOJI: Record<BlockType, string> = {
+  [BlockType.CHICKEN]: '🍗',
+  [BlockType.COLA]: '🥤',
+  [BlockType.FRIES]: '🍟',
+  [BlockType.BURGER]: '🍔',
+  [BlockType.PIZZA]: '🍕',
+}
+
+/** 블록 이모지 (렌더링용) */
+export const BLOCK_EMOJIS: Record<BlockType, string> = {
   [BlockType.CHICKEN]: '🍗',
   [BlockType.COLA]: '🥤',
   [BlockType.FRIES]: '🍟',

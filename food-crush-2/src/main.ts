@@ -51,6 +51,9 @@ class App {
       this.persistSave()
     })
 
+    eventBus.on('heart:changed', () => this.persistSave())
+    eventBus.on('tool:count-changed', () => this.persistSave())
+
     // 주기적 저장
     setInterval(() => this.persistSave(), 30000)
   }
@@ -90,4 +93,6 @@ class App {
   }
 }
 
-new App()
+new App();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+;(window as any).__eb = eventBus

@@ -1,4 +1,4 @@
-import { BLOCK_COLORS, type BlockType, type Position, CELL_SIZE } from '@/core/types'
+import { BLOCK_COLORS, type BlockType, type Position, CELL_SIZE, BOARD_COLS, BOARD_ROWS } from '@/core/types'
 
 interface Particle {
   x: number; y: number; vx: number; vy: number
@@ -21,9 +21,12 @@ export class EffectsCanvas {
     this.tick()
   }
 
+  private boardOffsetX(): number { return (this.canvas.width - BOARD_COLS * CELL_SIZE) / 2 }
+  private boardOffsetY(): number { return (this.canvas.height - BOARD_ROWS * CELL_SIZE) / 2 }
+
   spawnBlockPop(pos: Position, blockType: BlockType): void {
-    const cx = pos.col * CELL_SIZE + CELL_SIZE / 2
-    const cy = pos.row * CELL_SIZE + CELL_SIZE / 2
+    const cx = this.boardOffsetX() + pos.col * CELL_SIZE + CELL_SIZE / 2
+    const cy = this.boardOffsetY() + pos.row * CELL_SIZE + CELL_SIZE / 2
     const color = BLOCK_COLORS[blockType]
     const count = 8 + Math.floor(Math.random() * 5)
     for (let i = 0; i < count; i++) {
@@ -44,8 +47,8 @@ export class EffectsCanvas {
   }
 
   shockwave(pos: Position): void {
-    const cx = pos.col * CELL_SIZE + CELL_SIZE / 2
-    const cy = pos.row * CELL_SIZE + CELL_SIZE / 2
+    const cx = this.boardOffsetX() + pos.col * CELL_SIZE + CELL_SIZE / 2
+    const cy = this.boardOffsetY() + pos.row * CELL_SIZE + CELL_SIZE / 2
     let radius = 0
     const maxRadius = CELL_SIZE * 2
     const draw = () => {
@@ -61,11 +64,28 @@ export class EffectsCanvas {
     draw()
   }
 
+  get boardCenterX(): number { return this.boardOffsetX() + BOARD_COLS * CELL_SIZE / 2 }
+  get boardCenterY(): number { return this.boardOffsetY() + BOARD_ROWS * CELL_SIZE / 2 }
+
+  showScoreFloat(score: number, x: number, y: number): void {
+    const el = document.createElement('div')
+    el.textContent = `+${score}`
+    el.className = 'animate-score-float absolute font-bold pointer-events-none z-40'
+    el.style.cssText = `left:${x}px;top:${y}px;font-size:18px;transform:translateX(-50%);color:#FFD600;text-shadow:0 2px 4px rgba(0,0,0,0.5);`
+    this.canvas.parentElement?.appendChild(el)
+    setTimeout(() => el.remove(), 500)
+  }
+
   showText(text: string, x: number, y: number, fontSize: number, color: string): void {
     const el = document.createElement('div')
     el.textContent = text
     el.className = 'animate-cascade-text absolute font-bold pointer-events-none z-40'
-    el.style.cssText = `left:${x}px;top:${y}px;font-size:${fontSize}px;color:${color}`
+    const baseStyle = `left:${x}px;top:${y}px;font-size:${fontSize}px;transform:translateX(-50%);white-space:nowrap;`
+    if (color === 'rainbow') {
+      el.style.cssText = baseStyle + 'background:linear-gradient(90deg,#ff0080,#ff8c00,#ffd700,#00e676,#00b0ff,#e040fb);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 8px rgba(255,200,0,0.8))'
+    } else {
+      el.style.cssText = baseStyle + `color:${color};text-shadow:0 2px 8px rgba(0,0,0,0.5), 0 0 16px ${color}`
+    }
     this.canvas.parentElement?.appendChild(el)
     setTimeout(() => el.remove(), 800)
   }

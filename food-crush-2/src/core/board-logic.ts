@@ -122,6 +122,10 @@ export class BoardLogic {
   }
 
   hasValidMoves(): boolean {
+    return this.findHintMove() !== null
+  }
+
+  findHintMove(): { from: Position; to: Position } | null {
     const dirs: [number, number][] = [[0, 1], [1, 0]]
     for (let col = 0; col < BOARD_COLS; col++) {
       for (let row = 0; row < BOARD_ROWS; row++) {
@@ -134,11 +138,11 @@ export class BoardLogic {
           const hasMatch = findMatches(this.board).length > 0
           this.swap({ col, row }, { col: nc, row: nr })
 
-          if (hasMatch) return true
+          if (hasMatch) return { from: { col, row }, to: { col: nc, row: nr } }
         }
       }
     }
-    return false
+    return null
   }
 
   shuffle(): void {

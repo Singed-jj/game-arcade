@@ -11,6 +11,7 @@ export interface CascadeStep {
 /** 게임 이벤트 타입 정의 */
 export interface GameEventMap {
   // 보드 이벤트
+  'board:cell-tapped': { col: number; row: number }
   'board:swap-requested': { from: Position; to: Position }
   'board:swap-invalid': { from: Position; to: Position }
   'board:matches-found': { matches: MatchResult[]; cascadeIndex: number }
