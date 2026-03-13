@@ -5,16 +5,13 @@ import type { PieceManager } from '@/state/piece-manager'
 import { HUD } from '@/ui/hud'
 import stoneMapData from '@/assets/data/stone-map.json'
 
-/** 레벨별 반지름 오버라이드 (px). 없으면 stone 기반 자동 계산. */
-const LEVEL_RADIUS_OVERRIDE: Record<number, number> = {
-  1: 20, 2: 20, 3: 20, 5: 20, 6: 20,
-}
+/** 레벨 노드 반지름 (px) — 고정값, 레벨별 오버라이드 가능 */
+const DEFAULT_RADIUS = 9
+const LEVEL_RADIUS_OVERRIDE: Record<number, number> = {}
 
 interface StoneEntry {
   cx: number
   cy: number
-  w: number
-  h: number
 }
 
 interface StoneMapData {
@@ -25,16 +22,17 @@ interface StoneMapData {
 const stoneMap = stoneMapData as StoneMapData
 
 /**
- * backgroundSize:cover + backgroundPosition:top center 조건에서
+ * backgroundSize:contain + backgroundPosition:top center 조건에서
  * 이미지가 컨테이너에 렌더링될 때의 스케일과 오프셋을 계산한다.
+ * contain → 이미지 전체가 잘리지 않게 표시, 남은 공간은 여백.
  */
-function computeCoverTransform(
+function computeContainTransform(
   imgW: number,
   imgH: number,
   containerW: number,
   containerH: number,
 ): { scale: number; offsetX: number; offsetY: number } {
-  const scale = Math.max(containerW / imgW, containerH / imgH)
+  const scale = Math.min(containerW / imgW, containerH / imgH)
   const renderedW = imgW * scale
   // backgroundPosition: top center → X는 중앙 정렬, Y는 0
   const offsetX = (containerW - renderedW) / 2
@@ -48,11 +46,10 @@ function getNodePosition(
   containerW: number,
   containerH: number,
 ): { left: number; top: number; radius: number } {
-  // stones[0~3] = 장식용 스킵, stones[4+] = level 1, 2, 3...
-  const stoneIndex = (level - 1) + 4
-  const stone = stoneMap.stones[stoneIndex]
+  // stones[0] = level 1, stones[1] = level 2, ...
+  const stone = stoneMap.stones[level - 1]
 
-  const { scale, offsetX, offsetY } = computeCoverTransform(
+  const { scale, offsetX, offsetY } = computeContainTransform(
     stoneMap.imageSize.w,
     stoneMap.imageSize.h,
     containerW,
@@ -61,20 +58,17 @@ function getNodePosition(
 
   if (!stone) {
     // fallback: JSON에 없는 레벨은 자동 생성 패턴
-    const extra = level - (stoneMap.stones.length - 4)
+    const extra = level - stoneMap.stones.length
     return {
       left: extra % 2 === 1 ? containerW * 0.30 : containerW * 0.65,
       top: containerH * Math.min(0.92, 0.81 + extra * 0.05),
-      radius: 28,
+      radius: DEFAULT_RADIUS,
     }
   }
 
   const px = stone.cx * stoneMap.imageSize.w * scale + offsetX
   const py = stone.cy * stoneMap.imageSize.h * scale + offsetY
-
-  // 돌다리의 너비(px)를 기준으로 반지름 산출 (최소 24, 최대 40)
-  const stoneWidthPx = stone.w * stoneMap.imageSize.w * scale
-  const radius = LEVEL_RADIUS_OVERRIDE[level] ?? Math.min(40, Math.max(24, Math.round(stoneWidthPx * 0.55)))
+  const radius = LEVEL_RADIUS_OVERRIDE[level] ?? DEFAULT_RADIUS
 
   return { left: px, top: py, radius }
 }
@@ -88,8 +82,9 @@ export class MapScreen {
   ) {
     container.className = 'relative w-full h-dvh max-w-[375px] mx-auto overflow-hidden'
     container.style.backgroundImage = 'url(/assets/bg/stage-map.png)'
-    container.style.backgroundSize = 'cover'
+    container.style.backgroundSize = 'contain'
     container.style.backgroundPosition = 'top center'
+    container.style.backgroundColor = '#4a7c2f'
 
     // --- 헤더 (반투명 배경 패널) ---
     const headerPanel = document.createElement('div')
@@ -104,7 +99,7 @@ export class MapScreen {
 
     const nodeContainer = document.createElement('div')
     nodeContainer.className = 'absolute inset-0'
-    const maxVisible = Math.min(save.unlockedLevel + 3, 13)
+    const maxVisible = Math.min(save.unlockedLevel + 3, 20)
 
     // 컨테이너 크기 취득 (DOM에 마운트된 후 실제 크기)
     const containerW = container.offsetWidth || 375
