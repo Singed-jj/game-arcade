@@ -18,6 +18,7 @@ on:
           - royal-puzzle-4
           - township
           - last-war-survival
+          - portal
 
 env:
   VERCEL_ORG_ID: team_w8kyxaoSa4SU7lqxh3Tsry48
@@ -33,6 +34,7 @@ jobs:
       royal-puzzle-4: ${{ steps.changes.outputs.royal-puzzle-4 }}
       township: ${{ steps.changes.outputs.township }}
       last-war-survival: ${{ steps.changes.outputs.last-war-survival }}
+      portal: ${{ steps.changes.outputs.portal }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -46,7 +48,7 @@ jobs:
           echo "Changed files:"
           echo "$CHANGED"
 
-          for game in food-crush food-crush-2 block-blast-2 royal-puzzle-4 township last-war-survival; do
+          for game in food-crush food-crush-2 block-blast-2 royal-puzzle-4 township last-war-survival portal; do
             if [ -n "$FORCE" ]; then
               [ "$game" = "$FORCE" ] && result=true || result=false
             else
@@ -182,3 +184,23 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: prj_ANsXe0cMEEDCnykw4x0HvpT1w2ad
+
+  deploy-portal:
+    name: Deploy portal
+    needs: detect-changes
+    if: needs.detect-changes.outputs.portal == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install -g vercel@latest
+      - run: vercel pull --yes --environment=production --token ${{ secrets.VERCEL_TOKEN }} --cwd portal/
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PORTAL }}
+      - run: vercel deploy --prod --yes --token ${{ secrets.VERCEL_TOKEN }} --cwd portal/
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PORTAL }}
