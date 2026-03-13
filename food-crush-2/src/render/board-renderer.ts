@@ -141,6 +141,24 @@ export class BoardRenderer {
     return this.blocks.get(this.key(col, row))
   }
 
+  removeBlock(col: number, row: number): void {
+    this.blocks.delete(this.key(col, row))
+  }
+
+  moveBlock(from: Position, to: Position): void {
+    const view = this.blocks.get(this.key(from.col, from.row))
+    if (!view) return
+    this.blocks.delete(this.key(from.col, from.row))
+    this.blocks.set(this.key(to.col, to.row), view)
+  }
+
+  addBlock(pos: Position, blockType: BlockType): BlockView {
+    const view = new BlockView(blockType, pos)
+    this.blocks.set(this.key(pos.col, pos.row), view)
+    this.boardEl.appendChild(view.el)
+    return view
+  }
+
   getBoardElement(): HTMLElement { return this.boardEl }
 
   destroy(): void { this.blocks.forEach(b => b.destroy()); this.boardEl.remove() }

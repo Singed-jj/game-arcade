@@ -391,7 +391,7 @@ export class GameScreen {
       this.gameState.addScore(Math.round(totalMatched * 10 * multiplier))
     }
 
-    this.boardRenderer.renderBoard(this.boardLogic.getBoard(), true)
+    this.boardRenderer.renderBoard(this.boardLogic.getBoard(), false)
 
     if (this.gameState.areAllGoalsMet()) {
       const stars = this.gameState.calculateStars()
@@ -468,13 +468,46 @@ export class GameScreen {
 
   private async animateCascadeStep(step: CascadeStep, cascadeIndex: number): Promise<void> {
     let totalMatched = 0
+
+    // 1) 매칭된 블록 pop 애니메이션 + 파티클
+    const popPromises: Promise<void>[] = []
     for (const match of step.matches) {
       for (const cell of match.cells) {
         this.effects.spawnBlockPop(cell, match.blockType)
+        const view = this.boardRenderer.getBlock(cell.col, cell.row)
+        if (view) popPromises.push(view.animatePop())
       }
       totalMatched += match.cells.length
     }
+    await Promise.all(popPromises)
 
+    // 매칭 블록을 blocks map에서 제거
+    for (const match of step.matches) {
+      for (const cell of match.cells) {
+        this.boardRenderer.removeBlock(cell.col, cell.row)
+      }
+    }
+
+    // 2) 낙하 애니메이션
+    const dropPromises: Promise<void>[] = []
+    for (const fall of step.falls) {
+      const view = this.boardRenderer.getBlock(fall.from.col, fall.from.row)
+      if (view) {
+        this.boardRenderer.moveBlock(fall.from, fall.to)
+        view.pos = fall.to
+        view.updatePosition()
+        dropPromises.push(view.animateDrop(fall.from.row))
+      }
+    }
+    await Promise.all(dropPromises)
+
+    // 3) 새 블록 spawn 애니메이션
+    for (const s of step.spawned) {
+      const view = this.boardRenderer.addBlock(s.pos, s.blockType)
+      view.spawnAnimate()
+    }
+
+    // 4) 점수 float + cascade 텍스트
     const multiplier = cascadeIndex === 0 ? 1 : 1 + cascadeIndex * 0.5
     const scoreGain = Math.round(totalMatched * 10 * multiplier)
     this.effects.showScoreFloat(scoreGain, this.effects.boardCenterX, this.effects.boardCenterY - 30)
@@ -486,6 +519,7 @@ export class GameScreen {
       this.shake.shake(cfg.shakeIntensity)
     }
 
-    await new Promise(r => setTimeout(r, 500))
+    // spawn 애니메이션 완료 대기 (0.22s)
+    await new Promise(r => setTimeout(r, 250))
   }
 }
