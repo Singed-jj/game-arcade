@@ -4,33 +4,24 @@ import type { HeartManager } from '@/state/heart-manager'
 import type { PieceManager } from '@/state/piece-manager'
 import { HUD } from '@/ui/hud'
 
-/** Pre-calculated positions matching the S-curve path in stage-map.png (375px viewport) */
+/** Pre-calculated positions matching the S-curve path in stage-map.png (% based) */
 const NODE_POSITIONS: Array<{ left: string; top: string }> = [
-  { left: '27%', top: '380px' },   // Level 1: bottom-left pizza shop
-  { left: '48%', top: '240px' },   // Level 2: pond bend
-  { left: '70%', top: '320px' },   // Level 3: right side path
-  { left: '55%', top: '450px' },   // Level 4: below pond
-  { left: '35%', top: '540px' },   // Level 5: lower path
+  { left: '27%', top: '57%' },   // Level 1: 피자 가게 앞 돌다리
+  { left: '48%', top: '36%' },   // Level 2: 연못 굴곡 돌다리
+  { left: '70%', top: '48%' },   // Level 3: 우측 버거 가게 앞
+  { left: '55%', top: '67%' },   // Level 4: 연못 아래 돌다리
+  { left: '35%', top: '81%' },   // Level 5: 하단 돌다리
 ]
 
 function getNodePosition(level: number): { left: string; top: string } {
   if (level <= NODE_POSITIONS.length) {
     return NODE_POSITIONS[level - 1]
   }
-  // Level 6+: continue along path, alternating left/right with ~100px vertical spacing
   const extra = level - NODE_POSITIONS.length
-  const baseTop = 540 + extra * 100
-  const isLeft = extra % 2 === 1
   return {
-    left: isLeft ? '30%' : '65%',
-    top: `${baseTop}px`,
+    left: extra % 2 === 1 ? '30%' : '65%',
+    top: `${Math.min(92, 81 + extra * 5)}%`,
   }
-}
-
-function getMapHeight(maxLevel: number): number {
-  if (maxLevel <= 5) return 700
-  const extra = maxLevel - 5
-  return 700 + extra * 100
 }
 
 export class MapScreen {
@@ -40,27 +31,24 @@ export class MapScreen {
     heartManager: HeartManager,
     pieceManager: PieceManager,
   ) {
-    container.className = 'relative w-full h-dvh max-w-[375px] mx-auto overflow-hidden flex flex-col'
+    container.className = 'relative w-full h-dvh max-w-[375px] mx-auto overflow-hidden'
     container.style.backgroundImage = 'url(/assets/bg/stage-map.png)'
     container.style.backgroundSize = 'cover'
+    container.style.backgroundPosition = 'top center'
 
     // --- 헤더 (반투명 배경 패널) ---
     const headerPanel = document.createElement('div')
-    headerPanel.className = 'bg-black/30 backdrop-blur-sm'
+    headerPanel.className = 'absolute top-0 left-0 right-0 z-20 bg-black/30 backdrop-blur-sm'
+    headerPanel.style.paddingTop = 'var(--ticker-h)'
     const hud = new HUD(heartManager)
     hud.updateHearts(heartManager.getHearts())
     hud.updatePieces(pieceManager.getPieces())
     headerPanel.appendChild(hud.el)
     container.appendChild(headerPanel)
 
-    // --- 스크롤 영역 ---
-    const scrollArea = document.createElement('div')
-    scrollArea.className = 'flex-1 overflow-y-auto'
-
     const nodeContainer = document.createElement('div')
-    nodeContainer.className = 'relative w-full'
+    nodeContainer.className = 'absolute inset-0'
     const maxVisible = save.unlockedLevel + 3
-    nodeContainer.style.minHeight = `${getMapHeight(maxVisible)}px`
 
     for (let level = 1; level <= maxVisible; level++) {
       const stars = save.levelStars[level] ?? 0
@@ -161,17 +149,7 @@ export class MapScreen {
       nodeContainer.appendChild(wrap)
     }
 
-    scrollArea.appendChild(nodeContainer)
-
-    // --- 스크롤 힌트 (레벨 > 5일 때) ---
-    if (maxVisible > 5) {
-      const hint = document.createElement('p')
-      hint.textContent = '↕ 스크롤하여 레벨 탐색'
-      hint.className = 'text-white/40 text-xs text-center mt-6 mb-2'
-      scrollArea.appendChild(hint)
-    }
-
-    container.appendChild(scrollArea)
+    container.appendChild(nodeContainer)
 
     // --- 아이템 버튼 (오른쪽 하단 고정) ---
     const itemBtn = document.createElement('button')

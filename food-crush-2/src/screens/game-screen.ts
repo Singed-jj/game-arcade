@@ -62,6 +62,7 @@ export class GameScreen {
     this.container.className = 'relative w-full h-dvh max-w-[375px] mx-auto overflow-hidden flex flex-col'
     this.container.style.backgroundImage = 'url(/assets/bg/game-bg.png)'
     this.container.style.backgroundSize = 'cover'
+    this.container.style.paddingTop = 'var(--ticker-h)'
     this.addSparkleOverlay()
 
     this.hud = new HUD(heartManager)

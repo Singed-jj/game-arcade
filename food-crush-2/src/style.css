@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+:root {
+  --ticker-h: calc(28px + env(safe-area-inset-top, 0px));
+}
+
 /* 커스텀 CSS 애니메이션 — assets.html 스펙 참조 */
 @keyframes block-pop {
   0%   { transform: translate(var(--block-x), var(--block-y)) scale(1);   opacity: 1; }

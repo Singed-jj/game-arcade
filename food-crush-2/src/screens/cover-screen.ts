@@ -5,6 +5,7 @@ export class CoverScreen {
   constructor(container: HTMLElement) {
     container.className = 'relative w-full h-dvh max-w-[375px] mx-auto overflow-hidden flex flex-col items-center justify-center'
     container.style.background = 'linear-gradient(180deg, #1a0a3e 0%, #0e0a28 60%, #1a0820 100%)'
+    container.style.paddingTop = 'var(--ticker-h)'
 
     // --- 애니메이션 배경 파티클 ---
     this.addFloatingEmojis(container)

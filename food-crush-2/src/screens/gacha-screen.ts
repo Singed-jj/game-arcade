@@ -22,10 +22,12 @@ function getTargetEmoji(result: GachaResult): string {
   }
 }
 
-/** 릴 셀 높이 */
-const CELL_HEIGHT = 60
+/** 릴 셀 너비 */
+const CELL_WIDTH = 56
 /** 보이는 영역 높이 */
-const VISIBLE_HEIGHT = 288
+const VISIBLE_HEIGHT = 72
+/** 릴 래퍼 너비 (375 - 48) */
+const WRAPPER_WIDTH = 327
 
 function showToast(msg: string): void {
   const t = document.createElement('div')
@@ -45,6 +47,7 @@ export class GachaScreen {
   constructor(container: HTMLElement, pieceManager: PieceManager, toolManager: ToolManager) {
     container.className = 'relative w-full h-dvh max-w-[375px] mx-auto flex flex-col items-center overflow-hidden'
     container.style.background = 'linear-gradient(180deg, #1a0533 0%, #0E0A28 100%)'
+    container.style.paddingTop = 'var(--ticker-h)'
 
     const result = pieceManager.useForGacha()
     if (!result) {
@@ -77,20 +80,17 @@ export class GachaScreen {
 
     // 릴 스트립
     const reelStrip = document.createElement('div')
-    reelStrip.style.cssText = 'position: absolute; left: 0; right: 0; will-change: transform;'
+    reelStrip.style.cssText = 'position:absolute; top:0; height:100%; display:flex; align-items:center; will-change:transform;'
 
     // 릴 아이템 충분히 반복 (70개)
     const totalCells = REEL_ITEMS.length * 10
     for (let i = 0; i < totalCells; i++) {
       const cell = document.createElement('div')
       cell.style.cssText = `
-        height: ${CELL_HEIGHT}px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 36px;
-        color: white;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
+        width: ${CELL_WIDTH}px; height: 50px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 28px; color: white;
+        border-right: 1px solid rgba(255,255,255,0.05);
       `
       cell.textContent = REEL_ITEMS[i % REEL_ITEMS.length]
       reelStrip.appendChild(cell)
@@ -98,28 +98,22 @@ export class GachaScreen {
     reelWrapper.appendChild(reelStrip)
 
     // ── 하이라이트 프레임 (정중앙) ──
-    const highlightY = (VISIBLE_HEIGHT - CELL_HEIGHT) / 2
     const highlight = document.createElement('div')
     highlight.style.cssText = `
-      position: absolute;
-      left: 8px; right: 8px;
-      top: ${highlightY}px;
-      height: ${CELL_HEIGHT}px;
-      border: 2px solid #FFD700;
-      border-radius: 8px;
-      background: rgba(255,215,0,0.08);
-      pointer-events: none;
-      z-index: 2;
+      position: absolute; left: 50%; transform: translateX(-50%);
+      top: 8px; height: 56px; width: 56px;
+      border: 2px solid #FFD700; border-radius: 8px;
+      background: rgba(255,215,0,0.08); pointer-events:none; z-index:2;
     `
     reelWrapper.appendChild(highlight)
 
-    // 상단/하단 그라데이션 페이드
-    const fadeTop = document.createElement('div')
-    fadeTop.style.cssText = 'position:absolute;top:0;left:0;right:0;height:60px;background:linear-gradient(180deg,#1a0533,transparent);pointer-events:none;z-index:1;'
-    const fadeBottom = document.createElement('div')
-    fadeBottom.style.cssText = 'position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(0deg,#0E0A28,transparent);pointer-events:none;z-index:1;'
-    reelWrapper.appendChild(fadeTop)
-    reelWrapper.appendChild(fadeBottom)
+    // 좌측/우측 그라데이션 페이드
+    const fadeLeft = document.createElement('div')
+    fadeLeft.style.cssText = 'position:absolute;left:0;top:0;bottom:0;width:60px;background:linear-gradient(90deg,#1a0533,transparent);pointer-events:none;z-index:1;'
+    const fadeRight = document.createElement('div')
+    fadeRight.style.cssText = 'position:absolute;right:0;top:0;bottom:0;width:60px;background:linear-gradient(270deg,#0E0A28,transparent);pointer-events:none;z-index:1;'
+    reelWrapper.appendChild(fadeLeft)
+    reelWrapper.appendChild(fadeRight)
 
     container.appendChild(reelWrapper)
 
@@ -156,8 +150,8 @@ export class GachaScreen {
     let targetIndexInReel = REEL_ITEMS.indexOf(targetEmoji)
     if (targetIndexInReel < 0) targetIndexInReel = 0
 
-    // 하이라이트 프레임 중앙 Y 좌표
-    const highlightCenterY = (VISIBLE_HEIGHT - CELL_HEIGHT) / 2
+    // 하이라이트 프레임 중앙 X 좌표
+    const highlightCenterX = (WRAPPER_WIDTH - CELL_WIDTH) / 2
 
     // 5바퀴 + 타겟 인덱스
     const fullRotations = 5
@@ -180,8 +174,8 @@ export class GachaScreen {
       }
     }
 
-    // 최종 Y 위치: finalCellIndex 셀이 하이라이트 중앙에 오도록
-    const finalY = -(finalCellIndex * CELL_HEIGHT - highlightCenterY)
+    // 최종 X 위치: finalCellIndex 셀이 하이라이트 중앙에 오도록
+    const finalX = -(finalCellIndex * CELL_WIDTH - highlightCenterX)
 
     // 애니메이션 타이밍
     const FAST_DURATION = 1500   // 0~1.5초: 빠른 스크롤
@@ -190,29 +184,29 @@ export class GachaScreen {
     const PAUSE_BEFORE_RESULT = 1000 // 정지 후 1초 대기
 
     // 빠른 스크롤 단계 종료 지점 (전체 거리의 ~70%)
-    const totalDistance = Math.abs(finalY)
-    const fastEndY = -(totalDistance * 0.7)
+    const totalDistance = Math.abs(finalX)
+    const fastEndX = -(totalDistance * 0.7)
 
     const startTime = performance.now()
 
     const animate = (now: number) => {
       const elapsed = now - startTime
 
-      let currentY: number
+      let currentX: number
 
       if (elapsed < FAST_DURATION) {
         // Phase 1: 빠른 스크롤 (linear)
         const progress = elapsed / FAST_DURATION
-        currentY = fastEndY * progress
+        currentX = fastEndX * progress
       } else if (elapsed < TOTAL_DURATION) {
         // Phase 2: 감속 (easeOutCubic)
         const slowElapsed = elapsed - FAST_DURATION
         const progress = slowElapsed / SLOW_DURATION
         const eased = 1 - Math.pow(1 - progress, 3)
-        currentY = fastEndY + (finalY - fastEndY) * eased
+        currentX = fastEndX + (finalX - fastEndX) * eased
       } else {
         // 정지
-        reelStrip.style.transform = `translateY(${finalY}px)`
+        reelStrip.style.transform = `translateX(${finalX}px)`
 
         setTimeout(() => {
           this.showResult(resultOverlay, result, toolManager)
@@ -220,7 +214,7 @@ export class GachaScreen {
         return
       }
 
-      reelStrip.style.transform = `translateY(${currentY}px)`
+      reelStrip.style.transform = `translateX(${currentX}px)`
       requestAnimationFrame(animate)
     }
 

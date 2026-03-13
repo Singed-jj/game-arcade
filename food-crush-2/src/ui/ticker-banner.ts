@@ -11,7 +11,8 @@ export class TickerBanner {
       top: 0;
       left: 0;
       right: 0;
-      height: 28px;
+      height: var(--ticker-h);
+      padding-top: env(safe-area-inset-top, 0px);
       background: #7C3A00;
       z-index: 1000;
       overflow: hidden;

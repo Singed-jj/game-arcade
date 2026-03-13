@@ -13,6 +13,7 @@ export class ClearScreen {
     container.className = 'relative w-full h-dvh max-w-[375px] mx-auto flex flex-col items-center justify-center overflow-hidden'
     container.style.backgroundImage = 'url(/assets/bg/game-bg.png)'
     container.style.backgroundSize = 'cover'
+    container.style.paddingTop = 'var(--ticker-h)'
 
     // Dark overlay
     const overlay = document.createElement('div')
