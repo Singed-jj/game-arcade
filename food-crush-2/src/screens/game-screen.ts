@@ -14,6 +14,8 @@ import { HUD } from '@/ui/hud'
 import { GameInfoBar } from '@/ui/game-info-bar'
 import { ToolBar } from '@/ui/tool-bar'
 import { soundManager } from '@/audio/sound-manager'
+import { hapticManager } from '@/audio/haptic-manager'
+import type { HapticEvent } from '@/audio/haptic-manager'
 
 const PAUSE_STATE_KEY = 'fc2-pause-state'
 
@@ -316,17 +318,20 @@ export class GameScreen {
     // Visual effect + sound for tool use
     if (tool === ToolType.ROCKET) {
       soundManager.play('rocket')
+      hapticManager.trigger('rocket')
       this.shake.shake(3)
       await new Promise<void>(resolve => {
         this.effects.rocketBeam({ col, row }, true, resolve)
       })
     } else if (tool === ToolType.BOMB) {
       soundManager.play('bomb')
+      hapticManager.trigger('bomb')
       this.shake.shake(5)
       this.effects.flash('rgba(255,140,0,0.25)')
       this.effects.shockwave({ col, row })
     } else {
       soundManager.play('rainbow')
+      hapticManager.trigger('rainbow')
       const targetEls = targets
         .map((p: Position) => this.boardRenderer.getBlock(p.col, p.row)?.el)
         .filter((el: HTMLElement | undefined): el is HTMLElement => el !== undefined)
@@ -375,6 +380,7 @@ export class GameScreen {
       const stars = this.gameState.calculateStars()
       this.gameState.endLevel()
       soundManager.play('clear')
+      hapticManager.trigger('clear')
       await this.sweepRemainingBlocks()
       setTimeout(() => {
         eventBus.emit('screen:change', {
@@ -385,6 +391,7 @@ export class GameScreen {
     } else if (this.gameState.getRemainingMoves() <= 0) {
       this.gameState.endLevel()
       soundManager.play('fail')
+      hapticManager.trigger('fail')
       setTimeout(() => {
         const goalsList = Array.from(this.gameState.getGoals().entries()).map(
           ([k, v]) => ({ blockType: k as number, current: v.current, target: v.target })
@@ -431,12 +438,14 @@ export class GameScreen {
     this.boardRenderer.lockInput()
     this.stopHint()
 
+    hapticManager.trigger('swap')
     await this.boardRenderer.animateSwap(from, to)
     const result = this.boardLogic.trySwap(from, to)
 
     if (!result.valid) {
       await this.boardRenderer.animateSwap(from, to) // swap back
       this.shake.shake(2)
+      hapticManager.trigger('wrongSwap')
       eventBus.emit('board:swap-invalid', { from, to })
       this.boardRenderer.unlockInput()
       this.startHintTimer()
@@ -472,6 +481,7 @@ export class GameScreen {
       const stars = this.gameState.calculateStars()
       this.gameState.endLevel()
       soundManager.play('clear')
+      hapticManager.trigger('clear')
       eventBus.emit('game:level-complete', { stars, movesLeft: this.gameState.getRemainingMoves() })
       await this.sweepRemainingBlocks()
       setTimeout(() => {
@@ -483,6 +493,7 @@ export class GameScreen {
     } else if (this.gameState.getRemainingMoves() <= 0) {
       this.gameState.endLevel()
       soundManager.play('fail')
+      hapticManager.trigger('fail')
       eventBus.emit('game:level-failed')
       setTimeout(() => {
         const goalsList = Array.from(this.gameState.getGoals().entries()).map(
@@ -651,6 +662,8 @@ export class GameScreen {
     // 1) 매칭된 블록 pop 애니메이션 + 파티클 + 사운드
     const popPromises: Promise<void>[] = []
     soundManager.play('block-pop', 1.0 + cascadeIndex * 0.1)
+    const hapticEvents: HapticEvent[] = ['match', 'cascade2', 'cascade3', 'cascade4plus']
+    hapticManager.trigger(hapticEvents[Math.min(cascadeIndex, 3)])
     for (const match of step.matches) {
       for (const cell of match.cells) {
         this.effects.spawnBlockPop(cell, match.blockType)

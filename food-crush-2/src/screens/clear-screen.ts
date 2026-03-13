@@ -2,6 +2,7 @@ import { PIECES_FOR_GACHA } from '@/core/types'
 import { eventBus } from '@/state/event-bus'
 import type { PieceManager } from '@/state/piece-manager'
 import { soundManager } from '@/audio/sound-manager'
+import { hapticManager } from '@/audio/haptic-manager'
 
 export class ClearScreen {
   constructor(container: HTMLElement, pieceManager: PieceManager, data?: Record<string, unknown>) {
@@ -58,6 +59,7 @@ export class ClearScreen {
         const starIndex = i
         setTimeout(() => {
           soundManager.play('star', 1.0 + starIndex * 0.15)
+          hapticManager.trigger('star')
         }, (0.2 + i * 0.15) * 1000)
       } else {
         span.style.opacity = '0.25'
