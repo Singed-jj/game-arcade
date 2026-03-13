@@ -3,25 +3,75 @@ import type { SaveData } from '@/state/save-manager'
 import type { HeartManager } from '@/state/heart-manager'
 import type { PieceManager } from '@/state/piece-manager'
 import { HUD } from '@/ui/hud'
+import stoneMapData from '@/assets/data/stone-map.json'
 
-/** Pre-calculated positions matching the S-curve path in stage-map.png (% based) */
-const NODE_POSITIONS: Array<{ left: string; top: string }> = [
-  { left: '27%', top: '57%' },   // Level 1: 피자 가게 앞 돌다리
-  { left: '48%', top: '36%' },   // Level 2: 연못 굴곡 돌다리
-  { left: '70%', top: '48%' },   // Level 3: 우측 버거 가게 앞
-  { left: '55%', top: '67%' },   // Level 4: 연못 아래 돌다리
-  { left: '35%', top: '81%' },   // Level 5: 하단 돌다리
-]
+interface StoneEntry {
+  cx: number
+  cy: number
+  w: number
+  h: number
+}
 
-function getNodePosition(level: number): { left: string; top: string } {
-  if (level <= NODE_POSITIONS.length) {
-    return NODE_POSITIONS[level - 1]
+interface StoneMapData {
+  imageSize: { w: number; h: number }
+  stones: StoneEntry[]
+}
+
+const stoneMap = stoneMapData as StoneMapData
+
+/**
+ * backgroundSize:cover + backgroundPosition:top center 조건에서
+ * 이미지가 컨테이너에 렌더링될 때의 스케일과 오프셋을 계산한다.
+ */
+function computeCoverTransform(
+  imgW: number,
+  imgH: number,
+  containerW: number,
+  containerH: number,
+): { scale: number; offsetX: number; offsetY: number } {
+  const scale = Math.max(containerW / imgW, containerH / imgH)
+  const renderedW = imgW * scale
+  // backgroundPosition: top center → X는 중앙 정렬, Y는 0
+  const offsetX = (containerW - renderedW) / 2
+  const offsetY = 0
+  return { scale, offsetX, offsetY }
+}
+
+/** 레벨 번호 → 화면 좌표(px) + 반지름(px) */
+function getNodePosition(
+  level: number,
+  containerW: number,
+  containerH: number,
+): { left: number; top: number; radius: number } {
+  // stones[0~3] = 장식용 스킵, stones[4+] = level 1, 2, 3...
+  const stoneIndex = (level - 1) + 4
+  const stone = stoneMap.stones[stoneIndex]
+
+  const { scale, offsetX, offsetY } = computeCoverTransform(
+    stoneMap.imageSize.w,
+    stoneMap.imageSize.h,
+    containerW,
+    containerH,
+  )
+
+  if (!stone) {
+    // fallback: JSON에 없는 레벨은 자동 생성 패턴
+    const extra = level - (stoneMap.stones.length - 4)
+    return {
+      left: extra % 2 === 1 ? containerW * 0.30 : containerW * 0.65,
+      top: containerH * Math.min(0.92, 0.81 + extra * 0.05),
+      radius: 28,
+    }
   }
-  const extra = level - NODE_POSITIONS.length
-  return {
-    left: extra % 2 === 1 ? '30%' : '65%',
-    top: `${Math.min(92, 81 + extra * 5)}%`,
-  }
+
+  const px = stone.cx * stoneMap.imageSize.w * scale + offsetX
+  const py = stone.cy * stoneMap.imageSize.h * scale + offsetY
+
+  // 돌다리의 너비(px)를 기준으로 반지름 산출 (최소 24, 최대 40)
+  const stoneWidthPx = stone.w * stoneMap.imageSize.w * scale
+  const radius = Math.min(40, Math.max(24, Math.round(stoneWidthPx * 0.55)))
+
+  return { left: px, top: py, radius }
 }
 
 export class MapScreen {
@@ -50,14 +100,24 @@ export class MapScreen {
     nodeContainer.className = 'absolute inset-0'
     const maxVisible = save.unlockedLevel + 3
 
+    // 컨테이너 크기 취득 (DOM에 마운트된 후 실제 크기)
+    const containerW = container.offsetWidth || 375
+    const containerH = container.offsetHeight || window.innerHeight
+
     for (let level = 1; level <= maxVisible; level++) {
       const stars = save.levelStars[level] ?? 0
       const isUnlocked = level <= save.unlockedLevel
       const isCurrent = level === save.unlockedLevel
-      const pos = getNodePosition(level)
+      const pos = getNodePosition(level, containerW, containerH)
+
+      const diameter = pos.radius * 2
+      const fontSize = Math.max(10, Math.round(pos.radius * 0.55))
 
       const node = document.createElement('button')
-      node.className = 'w-16 h-16 rounded-full flex items-center justify-center font-bold text-lg transition-transform active:scale-90'
+      node.style.width = `${diameter}px`
+      node.style.height = `${diameter}px`
+      node.style.fontSize = `${fontSize}px`
+      node.className = 'rounded-full flex items-center justify-center font-bold transition-transform active:scale-90'
 
       if (isCurrent) {
         node.style.background = 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'
@@ -70,7 +130,7 @@ export class MapScreen {
         node.style.boxShadow = '0 4px 12px rgba(34,197,94,0.4), 0 0 0 2.5px rgba(255,255,255,0.8), inset 0 1px 0 rgba(255,255,255,0.3)'
         node.style.color = 'white'
         if (stars > 0) {
-          node.innerHTML = `<span class="text-base">${level}</span><span style="font-size:9px;margin-left:2px;opacity:0.9">✓</span>`
+          node.innerHTML = `<span>${level}</span><span style="font-size:${Math.max(8, fontSize - 3)}px;margin-left:2px;opacity:0.9">✓</span>`
         } else {
           node.textContent = String(level)
         }
@@ -99,14 +159,14 @@ export class MapScreen {
       if (isUnlocked) {
         for (let i = 0; i < 3; i++) {
           const s = document.createElement('span')
-          s.style.fontSize = '12px'
+          s.style.fontSize = '11px'
           if (i < stars) {
             s.textContent = '⭐'
             s.style.filter = 'drop-shadow(0 1px 3px rgba(255,200,0,0.8))'
           } else {
             s.textContent = '☆'
             s.style.color = 'rgba(255,255,255,0.55)'
-            s.style.fontSize = '11px'
+            s.style.fontSize = '10px'
           }
           starRow.appendChild(s)
         }
@@ -114,9 +174,9 @@ export class MapScreen {
 
       const wrap = document.createElement('div')
       wrap.className = 'absolute flex flex-col items-center'
-      wrap.style.left = pos.left
-      wrap.style.top = pos.top
-      wrap.style.transform = 'translateX(-50%)'
+      wrap.style.left = `${pos.left}px`
+      wrap.style.top = `${pos.top}px`
+      wrap.style.transform = 'translate(-50%, -50%)'
 
       // 현재 레벨: "플레이!" 태그 + 🐥 마스콧
       if (isCurrent) {

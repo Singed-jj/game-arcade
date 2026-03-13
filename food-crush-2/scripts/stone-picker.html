@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Stone Picker — stage-map.png</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: sans-serif; background: #1a1a2e; color: #eee; display: flex; gap: 16px; padding: 16px; height: 100vh; }
+
+  /*
+   * 게임과 동일한 cover 시뮬레이션:
+   * - 컨테이너 고정 375×(뷰포트 높이)
+   * - 이미지는 background-size:cover + background-position:top center
+   */
+  #canvas-wrap {
+    position: relative;
+    flex-shrink: 0;
+    width: 375px;
+    height: calc(100vh - 32px);
+    border: 2px solid #f0a500;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: crosshair;
+    background-image: url('../public/assets/bg/stage-map.png');
+    background-size: cover;
+    background-position: top center;
+    background-repeat: no-repeat;
+  }
+  /* 좌표 계산용 — 숨김 */
+  #ref-img {
+    position: absolute;
+    visibility: hidden;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+  #overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .dot {
+    position: absolute;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 11px;
+    color: #fff;
+    text-shadow: 0 0 3px #000;
+    border: 2px solid rgba(255,255,255,0.7);
+  }
+  .dot.decor { background: rgba(220,30,30,0.65); }
+  .dot.level { background: rgba(20,190,60,0.65); }
+
+  #panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+  }
+  h1 { font-size: 16px; color: #f0a500; }
+  .info { font-size: 12px; color: #aaa; line-height: 1.6; }
+  .info b { color: #eee; }
+  .badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+  .badge-orange { background: #f0a500; color: #000; }
+
+  #list {
+    font-size: 12px;
+    border-collapse: collapse;
+    width: 100%;
+  }
+  #list th, #list td {
+    border: 1px solid #333;
+    padding: 4px 8px;
+    text-align: center;
+  }
+  #list th { background: #2a2a4a; }
+  #list tr.decor td { background: #2a0a0a; }
+  #list tr.level td { background: #0a2a0a; }
+
+  .btn {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+  }
+  .btn-red   { background: #c0392b; color: #fff; }
+  .btn-blue  { background: #2980b9; color: #fff; }
+  .btn-green { background: #27ae60; color: #fff; }
+
+  #json-out {
+    font-family: monospace;
+    font-size: 11px;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 8px;
+    white-space: pre;
+    overflow-x: auto;
+    flex: 1;
+    min-height: 120px;
+  }
+  .row-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+  .hint { font-size: 11px; color: #888; }
+</style>
+</head>
+<body>
+
+<div id="canvas-wrap">
+  <div id="overlay"></div>
+</div>
+
+<div id="panel">
+  <h1>🗺 Stone Picker <span class="badge badge-orange">cover 모드</span></h1>
+  <div class="info">
+    <b>게임과 동일한 375px cover 뷰입니다.</b><br>
+    1. 보이는 돌다리 중심을 클릭<br>
+    2. 처음 4개 <span style="color:#e57373">D0~D3 빨강 = 장식</span>, 이후 <span style="color:#81c784">L1+ 초록 = 레벨</span><br>
+    3. 위→아래 순서로 클릭<br>
+    4. JSON 복사 후 <code>src/assets/data/stone-map.json</code>에 붙여넣기
+  </div>
+
+  <div class="row-buttons">
+    <button class="btn btn-red" onclick="undoLast()">↩ 마지막 취소</button>
+    <button class="btn btn-red" onclick="clearAll()">🗑 전체 지우기</button>
+    <button class="btn btn-blue" onclick="updateJson()">🔄 JSON 갱신</button>
+    <button class="btn btn-green" onclick="copyJson()">📋 JSON 복사</button>
+  </div>
+
+  <table id="list">
+    <thead><tr><th>idx</th><th>역할</th><th>cx</th><th>cy</th></tr></thead>
+    <tbody id="list-body"></tbody>
+  </table>
+
+  <span class="hint">w/h 기본값: 0.045 / 0.015 (JSON에서 직접 수정 가능)</span>
+
+  <pre id="json-out">(아직 없음)</pre>
+</div>
+
+<script>
+  const IMG_W = 1024, IMG_H = 1536;
+  const DEFAULT_W = 0.045, DEFAULT_H = 0.015;
+
+  let stones = [];
+
+  const wrap = document.getElementById('canvas-wrap');
+  const overlay = document.getElementById('overlay');
+
+  /**
+   * cover 변환 역산:
+   * 컨테이너 내 클릭 px → 원본 이미지 정규화 좌표 (cx, cy)
+   */
+  function screenToCover(px, py) {
+    const cw = wrap.clientWidth;
+    const ch = wrap.clientHeight;
+    const scale = Math.max(cw / IMG_W, ch / IMG_H);
+    const renderedW = IMG_W * scale;
+    const renderedH = IMG_H * scale;
+    // backgroundPosition: top center
+    const offsetX = (cw - renderedW) / 2;
+    const offsetY = 0;
+    const imgX = (px - offsetX) / scale;
+    const imgY = (py - offsetY) / scale;
+    return {
+      cx: +(imgX / IMG_W).toFixed(4),
+      cy: +(imgY / IMG_H).toFixed(4),
+    };
+  }
+
+  /**
+   * cover 변환 순방향:
+   * 정규화 좌표 → 컨테이너 내 px
+   */
+  function coverToScreen(cx, cy) {
+    const cw = wrap.clientWidth;
+    const ch = wrap.clientHeight;
+    const scale = Math.max(cw / IMG_W, ch / IMG_H);
+    const renderedW = IMG_W * scale;
+    const offsetX = (cw - renderedW) / 2;
+    const offsetY = 0;
+    return {
+      x: cx * IMG_W * scale + offsetX,
+      y: cy * IMG_H * scale + offsetY,
+    };
+  }
+
+  wrap.addEventListener('click', (e) => {
+    const rect = wrap.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+    const { cx, cy } = screenToCover(px, py);
+    stones.push({ cx, cy, w: DEFAULT_W, h: DEFAULT_H });
+    render();
+  });
+
+  function render() {
+    overlay.innerHTML = '';
+    stones.forEach((s, i) => {
+      const { x, y } = coverToScreen(s.cx, s.cy);
+      const dot = document.createElement('div');
+      dot.className = 'dot ' + (i < 4 ? 'decor' : 'level');
+      dot.style.left = x + 'px';
+      dot.style.top  = y + 'px';
+      dot.style.width  = '28px';
+      dot.style.height = '28px';
+      dot.textContent = i < 4 ? `D${i}` : `L${i - 3}`;
+      overlay.appendChild(dot);
+    });
+
+    const tbody = document.getElementById('list-body');
+    tbody.innerHTML = '';
+    stones.forEach((s, i) => {
+      const tr = document.createElement('tr');
+      tr.className = i < 4 ? 'decor' : 'level';
+      const role = i < 4 ? '장식' : `Level ${i - 3}`;
+      tr.innerHTML = `<td>${i}</td><td>${role}</td><td>${s.cx}</td><td>${s.cy}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    updateJson();
+  }
+
+  function updateJson() {
+    const data = {
+      imageSize: { w: IMG_W, h: IMG_H },
+      stones: stones,
+    };
+    document.getElementById('json-out').textContent = JSON.stringify(data, null, 2);
+  }
+
+  function undoLast() {
+    stones.pop();
+    render();
+  }
+
+  function clearAll() {
+    if (!confirm('전부 지우시겠습니까?')) return;
+    stones = [];
+    render();
+  }
+
+  function copyJson() {
+    updateJson();
+    const text = document.getElementById('json-out').textContent;
+    navigator.clipboard.writeText(text).then(() => alert('JSON 클립보드에 복사됨!'));
+  }
+</script>
+</body>
+</html>
