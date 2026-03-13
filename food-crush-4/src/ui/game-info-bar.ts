@@ -1,0 +1,103 @@
+import { BLOCK_EMOJIS, BLOCK_GRADIENTS, type BlockType } from '@/core/types'
+import { eventBus } from '@/state/event-bus'
+
+export class GameInfoBar {
+  readonly el: HTMLElement
+  private movesEl: HTMLElement
+  private goalsEl: HTMLElement
+  private wasUrgent = false
+
+  constructor() {
+    this.el = document.createElement('div')
+    this.el.className = 'flex items-center justify-between px-3 py-2 rounded-xl mx-2 mt-1 mb-1'
+    this.el.style.background = 'linear-gradient(135deg, rgba(20,10,50,0.85) 0%, rgba(40,20,80,0.85) 100%)'
+    this.el.style.backdropFilter = 'blur(8px)'
+    this.el.style.boxShadow = '0 2px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12), 0 0 0 1px rgba(255,255,255,0.08)'
+
+    const movesWrap = document.createElement('div')
+    movesWrap.className = 'flex flex-col items-center min-w-[48px]'
+    this.movesEl = document.createElement('div')
+    this.movesEl.className = 'text-yellow-300 font-bold text-2xl text-center'
+    const movesLabel = document.createElement('span')
+    movesLabel.className = 'text-white text-[8px] opacity-60 uppercase tracking-wider'
+    movesLabel.textContent = '이동'
+    movesWrap.appendChild(this.movesEl)
+    movesWrap.appendChild(movesLabel)
+    this.el.appendChild(movesWrap)
+
+    this.goalsEl = document.createElement('div')
+    this.goalsEl.className = 'flex gap-3 pl-3 border-l border-white/20'
+    this.el.appendChild(this.goalsEl)
+
+    eventBus.on('game:move-used', ({ remaining }) => this.updateMoves(remaining))
+    eventBus.on('game:goal-progress', ({ blockType, current, target }) => {
+      this.updateGoal(blockType, current, target)
+    })
+  }
+
+  setLevel(moves: number, goals: Map<BlockType, { current: number; target: number }>): void {
+    this.wasUrgent = false
+    this.updateMoves(moves)
+    this.goalsEl.innerHTML = ''
+    for (const [type, goal] of goals) {
+      const wrap = document.createElement('div')
+      wrap.className = 'flex flex-col items-center'
+      wrap.dataset.blockType = String(type)
+      const icon = document.createElement('div')
+      icon.className = 'w-8 h-8 rounded-lg flex items-center justify-center text-xl'
+      icon.style.background = BLOCK_GRADIENTS[type]
+      icon.textContent = BLOCK_EMOJIS[type]
+      const label = document.createElement('span')
+      label.className = 'text-white text-xs'
+      label.textContent = `${goal.current}/${goal.target}`
+      wrap.appendChild(icon)
+      wrap.appendChild(label)
+      this.goalsEl.appendChild(wrap)
+    }
+  }
+
+  updateMoves(remaining: number): void {
+    this.movesEl.textContent = String(remaining)
+
+    // 바운스 애니메이션 트리거
+    this.movesEl.style.animation = 'none'
+    void this.movesEl.offsetHeight // force reflow
+    this.movesEl.style.animation = 'moves-bounce 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)'
+
+    if (remaining <= 3) {
+      this.movesEl.className = 'text-red-400 font-bold text-2xl text-center min-w-[48px] animate-bomb-shake'
+      if (!this.wasUrgent) {
+        this.wasUrgent = true
+        eventBus.emit('game:urgent-mode', { urgent: true })
+      }
+    } else if (remaining <= 5) {
+      this.movesEl.className = 'text-red-400 font-bold text-2xl text-center min-w-[48px] animate-pulse'
+      if (this.wasUrgent) {
+        this.wasUrgent = false
+        eventBus.emit('game:urgent-mode', { urgent: false })
+      }
+    } else {
+      this.movesEl.className = 'text-white font-bold text-2xl text-center min-w-[48px]'
+      if (this.wasUrgent) {
+        this.wasUrgent = false
+        eventBus.emit('game:urgent-mode', { urgent: false })
+      }
+    }
+  }
+
+  private updateGoal(blockType: BlockType, current: number, target: number): void {
+    const wrap = this.goalsEl.querySelector(`[data-block-type="${blockType}"]`) as HTMLElement | null
+    if (!wrap) return
+    const label = wrap.querySelector('span')
+    if (!label) return
+    const wasDone = label.textContent === '✓'
+    const done = current >= target
+    label.textContent = done ? '✓' : `${current}/${target}`
+    label.className = done ? 'text-green-400 text-xs font-bold' : 'text-white text-xs'
+    if (done && !wasDone) {
+      wrap.style.animation = 'none'
+      wrap.offsetHeight // force reflow
+      wrap.style.animation = 'goal-complete 0.4s ease-out'
+    }
+  }
+}

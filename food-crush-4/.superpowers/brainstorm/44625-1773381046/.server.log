@@ -1,0 +1,7 @@
+{"type":"server-started","port":64791,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:64791","screen_dir":"/Users/jaejin/projects/toy/game-arcade/food-crush-2/.superpowers/brainstorm/44625-1773381046"}
+{"type":"screen-added","file":"/Users/jaejin/projects/toy/game-arcade/food-crush-2/.superpowers/brainstorm/44625-1773381046/stone-map-overview.html"}
+{"type":"screen-added","file":"/Users/jaejin/projects/toy/game-arcade/food-crush-2/.superpowers/brainstorm/44625-1773381046/stone-map-v2.html"}
+{"type":"screen-added","file":"/Users/jaejin/projects/toy/game-arcade/food-crush-2/.superpowers/brainstorm/44625-1773381046/stone-map-v3.html"}
+{"source":"user-event","type":"click","text":"B\n        \n          Python OpenCV 자동 감지\n          색상/형태 기반 돌다리 영역 자동 추출. 빠르지만 검토 필요.","choice":"b","id":null,"timestamp":1773381297190}
+{"type":"screen-added","file":"/Users/jaejin/projects/toy/game-arcade/food-crush-2/.superpowers/brainstorm/44625-1773381046/waiting.html"}
+{"type":"server-stopped","reason":"idle timeout"}

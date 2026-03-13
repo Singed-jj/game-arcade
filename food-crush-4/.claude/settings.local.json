@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__serena__list_dir",
+      "Bash(/Users/jaejin/.claude/plugins/cache/superpowers-marketplace/superpowers/5.0.2/skills/brainstorming/scripts/start-server.sh --project-dir /Users/jaejin/projects/toy/game-arcade/food-crush-2)",
+      "Bash(pip3 install:*)",
+      "Bash(python3 -m venv /tmp/stone-env ; /tmp/stone-env/bin/pip install opencv-python-headless pillow 2>&1 | tail -5)",
+      "Bash(cd /Users/jaejin/projects/toy/game-arcade/food-crush-2 ; /tmp/stone-env/bin/python3 scripts/detect-stones.py)",
+      "mcp__serena__activate_project",
+      "Skill(agent-browser)",
+      "Bash(~/.claude/skills/game-video-into-spec/scripts/cli-adapters/preflight-check.sh)",
+      "mcp__playwright__browser_navigate",
+      "Bash(~/.claude/skills/game-video-into-spec/scripts/extract-frames.sh \"/Users/jaejin/Downloads/royal_match.mp4\" \"./game-spec-royal_match-2026-03-13\" 2 2>&1 | tail -5)",
+      "Bash(~/.claude/skills/game-video-into-spec/scripts/extract-frames.sh \"/Users/jaejin/Downloads/match3.mp4\" \"./game-spec-match3-2026-03-13\" 2 2>&1 | tail -5)",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_snapshot",
+      "Bash(~/.claude/skills/game-video-into-spec/scripts/extract-frames.sh \"/Users/jaejin/Downloads/royal_match.mp4\" \"./game-spec-royal_match-2026-03-13\" 2 2>&1)",
+      "mcp__playwright__browser_type",
+      "Bash(ffprobe -v quiet -show_entries format=duration -of csv=p=0 \"/Users/jaejin/Downloads/royal_match.mp4\" ; ffprobe -v quiet -show_entries format=duration -of csv=p=0 \"/Users/jaejin/Downloads/match3.mp4\")",
+      "Bash(ffmpeg -i \"/Users/jaejin/Downloads/royal_match.mp4\" -vf \"fps=0.1,scale=640:-1\" -q:v 3 \"./game-spec-royal_match-2026-03-13/images/frame-%03d.png\" 2>&1 | tail -3)",
+      "Bash(ffmpeg -i \"/Users/jaejin/Downloads/match3.mp4\" -vf \"fps=0.5,scale=640:-1\" -q:v 3 \"./game-spec-match3-2026-03-13/images/frame-%03d.png\" 2>&1 | tail -3)",
+      "Bash(claude plugin:*)",
+      "Read(//Users/jaejin/.claude/plugins/repos/**)",
+      "Read(//Users/jaejin/.claude/**)",
+      "Bash(which ffmpeg:*)",
+      "Bash(AUDIO_DIR=/Users/jaejin/projects/toy/game-arcade/food-crush-2/public/audio\nDL=/Users/jaejin/Downloads\n\nffmpeg -y -i $DL/block-pop.wav -codec:a libmp3lame -qscale:a 3 $AUDIO_DIR/block-pop.mp3 2>&1 | tail -3 ; echo \"block-pop done\"\nffmpeg -y -i $DL/swap.flac     -codec:a libmp3lame -qscale:a 3 $AUDIO_DIR/swap.mp3     2>&1 | tail -3 ; echo \"swap done\"\nffmpeg -y -i $DL/rocket.wav    -codec:a libmp3lame -qscale:a 3 $AUDIO_DIR/rocket.mp3   2>&1 | tail -3 ; echo \"rocket done\"\nffmpeg -y -i $DL/star.wav      -codec:a libmp3lame -qscale:a 3 $AUDIO_DIR/star.mp3     2>&1 | tail -3 ; echo \"star done\"\nffmpeg -y -i $DL/fail.wav      -codec:a libmp3lame -qscale:a 3 $AUDIO_DIR/fail.mp3     2>&1 | tail -3 ; echo \"fail done\"\nffmpeg -y -i $DL/clear.wav     -codec:a libmp3lame -qscale:a 3 $AUDIO_DIR/clear.mp3    2>&1 | tail -3 ; echo \"clear done\"\nffmpeg -y -i $DL/rainbow.wav   -codec:a libmp3lame -qscale:a 3 $AUDIO_DIR/rainbow.mp3  2>&1 | tail -3 ; echo \"rainbow done\"\ncp $DL/bomb.mp3 $AUDIO_DIR/bomb.mp3 ; echo \"bomb done \\(mp3 직접 복사\\)\")",
+      "Bash(git -C /Users/jaejin/projects/toy/game-arcade/food-crush-2 status)",
+      "Bash(git -C /Users/jaejin/projects/toy/game-arcade/food-crush-2 diff src/audio/haptic-manager.ts)",
+      "Bash(ffprobe -v quiet -print_format json -show_streams /Users/jaejin/Documents/screenshots/rocket.mov 2>/dev/null | python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); v=[s for s in d['streams'] if s['codec_type']=='video'][0]; print\\(f\\\\\"duration={v.get\\('duration','?'\\)}s, size={v.get\\('width','?'\\)}x{v.get\\('height','?'\\)}\\\\\"\\)\")",
+      "Bash(mkdir -p /tmp/rocket-frames)",
+      "Bash(ffmpeg -ss 23 -i /Users/jaejin/Documents/screenshots/rocket.mov -t 10 -vf fps=8,scale=439:-1 /tmp/rocket-frames/frame_%03d.jpg -y)",
+      "Read(//tmp/**)",
+      "Bash(git pull:*)",
+      "Bash(ffmpeg -ss 23 -i /Users/jaejin/Documents/screenshots/rocket.mov -t 10 -vf \"fps=15,scale=439:-1\" /tmp/rocket-frames2/frame_%04d.jpg -y 2>/dev/null && ls /tmp/rocket-frames2/ | wc -l)",
+      "Bash(mkdir -p /tmp/rocket-frames2 && ffmpeg -ss 23 -i /Users/jaejin/Documents/screenshots/rocket.mov -t 10 -vf \"fps=15,scale=439:-1\" /tmp/rocket-frames2/frame_%04d.jpg -y 2>/dev/null ; ls /tmp/rocket-frames2/ | wc -l)",
+      "Bash(find /Users/jaejin/projects/toy/game-arcade/food-crush-2/src/assets -type f -name \"*.json\" 2>/dev/null; or echo \"src/assets에서 JSON 파일 없음\")"
+    ]
+  }
+}

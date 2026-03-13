@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stone Click Tool</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+    min-height: 100vh;
+  }
+  h1 { color: #f0a500; margin-bottom: 12px; font-size: 20px; }
+
+  #status {
+    background: #2a2a4a;
+    border: 1px solid #444;
+    padding: 10px 20px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 15px;
+    font-weight: bold;
+    text-align: center;
+    width: 375px;
+    max-width: 100%;
+  }
+  #status.done { background: #1a3a1a; border-color: #4ade80; color: #4ade80; }
+  #status.warn { background: #3a2a00; border-color: #f0a500; color: #f0a500; }
+
+  .controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  button {
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 13px;
+  }
+  #btn-undo { background: #f97316; color: white; }
+  #btn-reset { background: #ef4444; color: white; }
+  #btn-copy { background: #22c55e; color: white; }
+  #btn-save { background: #3b82f6; color: white; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  #map-wrap {
+    position: relative;
+    width: 375px;
+    max-width: 100%;
+    border: 2px solid #555;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: crosshair;
+    background: #4a7c2f;
+  }
+  #map-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    pointer-events: none;
+    user-select: none;
+  }
+  #map-canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+
+  #json-panel {
+    margin-top: 12px;
+    width: 375px;
+    max-width: 100%;
+  }
+  #json-panel h3 { font-size: 13px; color: #aaa; margin-bottom: 6px; }
+  #json-output {
+    background: #0a0a1e;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 12px;
+    white-space: pre;
+    font-family: monospace;
+    font-size: 11px;
+    color: #88cc88;
+    max-height: 260px;
+    overflow: auto;
+    width: 100%;
+  }
+  #hint {
+    margin-top: 10px;
+    font-size: 11px;
+    color: #666;
+    text-align: center;
+    width: 375px;
+    max-width: 100%;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<h1>🗺️ Stone Click Tool</h1>
+
+<div id="status">이미지 로딩 중...</div>
+
+<div class="controls">
+  <button id="btn-undo">↩ 되돌리기</button>
+  <button id="btn-reset">🔄 초기화</button>
+  <button id="btn-copy" disabled>📋 JSON 복사</button>
+  <button id="btn-save" disabled>💾 자동 저장</button>
+</div>
+
+<div id="map-wrap">
+  <img id="map-img" src="/assets/bg/stage-map.png" alt="stage map" draggable="false" />
+  <canvas id="map-canvas"></canvas>
+</div>
+
+<div id="json-panel">
+  <h3>stone-map.json 미리보기</h3>
+  <pre id="json-output">{}</pre>
+</div>
+
+<div id="hint">
+  돌다리 원 위를 순서대로 클릭하세요 (레벨 1 → 13)<br>
+  이미지는 게임과 동일한 375px contain 렌더링입니다
+</div>
+
+<script>
+const IMG_W = 1024;
+const IMG_H = 1536;
+const MAX_LEVELS = 20;
+const RADIUS_DISPLAY = 9; // 게임에서 사용할 반지름(px) — 이미지 표시 크기에서의 값
+
+const stones = []; // [{cx, cy}, ...]  — 이미지 fraction 좌표
+
+const imgEl = document.getElementById('map-img');
+const canvas = document.getElementById('map-canvas');
+const wrap = document.getElementById('map-wrap');
+const statusEl = document.getElementById('status');
+const jsonEl = document.getElementById('json-output');
+const btnUndo = document.getElementById('btn-undo');
+const btnReset = document.getElementById('btn-reset');
+const btnCopy = document.getElementById('btn-copy');
+const btnSave = document.getElementById('btn-save');
+
+// ─── 좌표 변환 ────────────────────────────────────────────────
+// 이미지는 width:100%/height:auto 로 표시되므로 표시 크기 = contain 결과와 동일
+function getDisplaySize() {
+  return { w: imgEl.clientWidth, h: imgEl.clientHeight };
+}
+
+// 클릭 위치(display px) → 이미지 fraction
+function screenToFraction(sx, sy) {
+  const { w, h } = getDisplaySize();
+  return { cx: sx / w, cy: sy / h };
+}
+
+// 이미지 fraction → 캔버스 px
+function fractionToCanvas(cx, cy) {
+  const { w, h } = getDisplaySize();
+  return { x: cx * w, y: cy * h };
+}
+
+// ─── 캔버스 리사이즈 ──────────────────────────────────────────
+function resizeCanvas() {
+  const { w, h } = getDisplaySize();
+  canvas.width = w;
+  canvas.height = h;
+  redraw();
+}
+
+// ─── 그리기 ───────────────────────────────────────────────────
+function redraw() {
+  const { w, h } = getDisplaySize();
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, w, h);
+
+  // 게임 컨테이너 기준 반지름 비율 → 캔버스 픽셀로 변환
+  const displayRadius = RADIUS_DISPLAY * (w / 375);
+
+  stones.forEach((s, i) => {
+    const level = i + 1;
+    const { x, y } = fractionToCanvas(s.cx, s.cy);
+
+    // 외곽 링
+    ctx.beginPath();
+    ctx.arc(x, y, displayRadius + 3, 0, Math.PI * 2);
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 채운 원
+    ctx.beginPath();
+    ctx.arc(x, y, displayRadius, 0, Math.PI * 2);
+    ctx.fillStyle = level === stones.length
+      ? 'rgba(245,158,11,0.9)'   // 마지막 클릭 = 주황
+      : 'rgba(34,197,94,0.85)';  // 이전 = 초록
+    ctx.fill();
+
+    // 레벨 번호
+    ctx.fillStyle = 'white';
+    ctx.font = `bold ${Math.round(displayRadius * 0.75)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(level), x, y);
+  });
+
+  // 상태 업데이트
+  if (stones.length >= MAX_LEVELS) {
+    statusEl.className = 'done';
+    statusEl.textContent = `✅ ${MAX_LEVELS}개 완료! JSON을 복사하거나 저장하세요.`;
+    btnCopy.disabled = false;
+    btnSave.disabled = false;
+  } else {
+    statusEl.className = '';
+    statusEl.textContent = `레벨 ${stones.length + 1}의 돌다리를 클릭하세요 (${stones.length + 1} / ${MAX_LEVELS})`;
+    btnCopy.disabled = stones.length === 0;
+    btnSave.disabled = true;
+  }
+
+  updateJSON();
+}
+
+// ─── JSON 생성 ────────────────────────────────────────────────
+function buildJSON() {
+  return {
+    imageSize: { w: IMG_W, h: IMG_H },
+    stones: stones.map(s => ({
+      cx: Math.round(s.cx * 10000) / 10000,
+      cy: Math.round(s.cy * 10000) / 10000,
+    }))
+  };
+}
+
+function updateJSON() {
+  jsonEl.textContent = JSON.stringify(buildJSON(), null, 2);
+}
+
+// ─── 클릭 이벤트 ──────────────────────────────────────────────
+wrap.addEventListener('click', (e) => {
+  if (stones.length >= MAX_LEVELS) return;
+  const rect = imgEl.getBoundingClientRect();
+  const sx = e.clientX - rect.left;
+  const sy = e.clientY - rect.top;
+  stones.push(screenToFraction(sx, sy));
+  redraw();
+});
+
+// ─── 버튼 ─────────────────────────────────────────────────────
+btnUndo.addEventListener('click', () => {
+  stones.pop();
+  redraw();
+});
+
+btnReset.addEventListener('click', () => {
+  if (stones.length > 0 && !confirm('모두 초기화할까요?')) return;
+  stones.length = 0;
+  redraw();
+});
+
+btnCopy.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(JSON.stringify(buildJSON(), null, 2));
+    const orig = btnCopy.textContent;
+    btnCopy.textContent = '✅ 복사됨!';
+    setTimeout(() => { btnCopy.textContent = orig; }, 1500);
+  } catch {
+    alert('클립보드 복사 실패. 아래 JSON을 직접 복사하세요.');
+  }
+});
+
+// 자동 저장 — /assets/data/stone-map.json 에 PUT
+// (Vite dev server에서는 직접 파일 저장이 안 되므로 클립보드 복사 안내)
+btnSave.addEventListener('click', async () => {
+  const json = JSON.stringify(buildJSON(), null, 2);
+  try {
+    // Vite custom plugin이 있으면 여기서 저장 가능하지만,
+    // 기본적으로 클립보드 복사 후 수동 붙여넣기 안내
+    await navigator.clipboard.writeText(json);
+    statusEl.className = 'done';
+    statusEl.textContent = '📋 JSON 클립보드 복사 완료! src/assets/data/stone-map.json 에 붙여넣으세요.';
+  } catch {
+    alert('클립보드 복사에 실패했습니다. 아래 JSON을 수동으로 복사하세요.');
+  }
+});
+
+// ─── 초기화 ───────────────────────────────────────────────────
+imgEl.addEventListener('load', () => {
+  statusEl.textContent = `레벨 1의 돌다리를 클릭하세요 (1 / ${MAX_LEVELS})`;
+  resizeCanvas();
+});
+window.addEventListener('resize', resizeCanvas);
+if (imgEl.complete && imgEl.naturalWidth > 0) {
+  statusEl.textContent = `레벨 1의 돌다리를 클릭하세요 (1 / ${MAX_LEVELS})`;
+  resizeCanvas();
+}
+
+// ─── 기존 stone-map.json 로드 (이미 찍은 게 있으면 표시) ──────
+fetch('/assets/data/stone-map.json')
+  .then(r => r.json())
+  .then(data => {
+    if (data.stones && data.stones.length > 0) {
+      for (const s of data.stones) {
+        if (stones.length < MAX_LEVELS) {
+          stones.push({ cx: s.cx, cy: s.cy });
+        }
+      }
+      redraw();
+    }
+  })
+  .catch(() => {}); // 파일 없으면 무시
+</script>
+</body>
+</html>

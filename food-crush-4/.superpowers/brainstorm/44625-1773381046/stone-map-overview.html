@@ -1,0 +1,51 @@
+<h2>현재 맵 상태 파악</h2>
+<p class="subtitle">stage-map.png 위에 현재 NODE_POSITIONS 5개가 얼마나 맞는지 확인</p>
+
+<div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+  <div style="flex:1;min-width:280px">
+    <div style="position:relative;display:inline-block;width:100%;max-width:375px">
+      <img src="file:///Users/jaejin/projects/toy/game-arcade/food-crush-2/public/assets/bg/stage-map.png"
+           style="width:100%;display:block;border-radius:8px;border:2px solid #374151" />
+      <!-- 현재 NODE_POSITIONS 오버레이 -->
+      <!-- Level 1: left 27%, top 57% -->
+      <div style="position:absolute;left:27%;top:57%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#fbbf24,#f59e0b);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:14px;border:2px solid white;box-shadow:0 0 8px rgba(245,158,11,0.8)">1</div>
+      <!-- Level 2: left 48%, top 36% -->
+      <div style="position:absolute;left:48%;top:36%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#16a34a);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:14px;border:2px solid white">2</div>
+      <!-- Level 3: left 70%, top 48% -->
+      <div style="position:absolute;left:70%;top:48%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#16a34a);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:14px;border:2px solid white">3</div>
+      <!-- Level 4: left 55%, top 67% -->
+      <div style="position:absolute;left:55%;top:67%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6b7280,#4b5563);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:14px;border:2px solid white">4</div>
+      <!-- Level 5: left 35%, top 81% -->
+      <div style="position:absolute;left:35%;top:81%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6b7280,#4b5563);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:14px;border:2px solid white">5</div>
+    </div>
+    <p style="font-size:12px;color:#9ca3af;margin-top:8px">현재: w-16(64px) 고정 크기, 5개 하드코딩 위치</p>
+  </div>
+
+  <div style="flex:1;min-width:260px">
+    <h3>요청 사항 요약</h3>
+    <ul style="line-height:2">
+      <li>🪨 이미지에 돌다리 20개 이상 존재</li>
+      <li>⛔ 맨 위 4개 돌다리는 레벨 없이 스킵</li>
+      <li>✅ 5번째 돌다리부터 레벨 서클 배치</li>
+      <li>📐 돌다리 크기에 맞게 서클 크기도 비례 조정</li>
+      <li>💾 이미지 비율 기반 JSON으로 사전 정의</li>
+      <li>📱 기기 viewport에 맞게 런타임 스케일링</li>
+    </ul>
+
+    <h3 style="margin-top:16px">JSON 데이터 구조 (안)</h3>
+    <pre style="background:#1f2937;color:#e5e7eb;padding:12px;border-radius:6px;font-size:12px;overflow:auto">{
+  "imageSize": { "w": 1080, "h": 1920 },
+  "stones": [
+    {
+      "id": 1,
+      "cx": 0.50,   // 중심 x / 이미지 w
+      "cy": 0.08,   // 중심 y / 이미지 h
+      "w":  0.18,   // 돌 width / 이미지 w
+      "h":  0.06    // 돌 height / 이미지 h
+    },
+    ...
+  ]
+}</pre>
+    <p style="font-size:12px;color:#9ca3af">stones[0~3]: 스킵(장식용)<br>stones[4~]: level 1, 2, 3... 순서</p>
+  </div>
+</div>

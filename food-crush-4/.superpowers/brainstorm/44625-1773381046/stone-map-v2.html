@@ -1,0 +1,60 @@
+<h2>현재 맵 상태 파악</h2>
+<p class="subtitle">stage-map.png 위에 현재 NODE_POSITIONS 5개 오버레이</p>
+
+<div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+  <div style="flex:1;min-width:280px;max-width:375px">
+    <div style="position:relative;display:inline-block;width:100%">
+      <img src="stage-map.png"
+           id="mapImg"
+           style="width:100%;display:block;border-radius:8px;border:2px solid #374151" />
+      <!-- Level 1: left 27%, top 57% (황색 = current) -->
+      <div style="position:absolute;left:27%;top:57%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#fbbf24,#f59e0b);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:14px;border:2px solid white;box-shadow:0 0 8px rgba(245,158,11,0.8)">1</div>
+      <!-- Level 2: left 48%, top 36% -->
+      <div style="position:absolute;left:48%;top:36%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#16a34a);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:14px;border:2px solid white">2</div>
+      <!-- Level 3: left 70%, top 48% -->
+      <div style="position:absolute;left:70%;top:48%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#22c55e,#16a34a);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:14px;border:2px solid white">3</div>
+      <!-- Level 4: left 55%, top 67% -->
+      <div style="position:absolute;left:55%;top:67%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6b7280,#4b5563);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:14px;border:2px solid white">4</div>
+      <!-- Level 5: left 35%, top 81% -->
+      <div style="position:absolute;left:35%;top:81%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6b7280,#4b5563);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:14px;border:2px solid white">5</div>
+    </div>
+    <p style="font-size:12px;color:#9ca3af;margin-top:8px">현재: 64px 고정, 5개 하드코딩</p>
+  </div>
+
+  <div style="flex:1;min-width:260px">
+    <h3>목표 구조</h3>
+    <ul style="line-height:2;font-size:14px">
+      <li>🪨 이미지에 돌다리 20개 이상 존재</li>
+      <li>⛔ 맨 위 4개 돌다리는 스킵 (장식)</li>
+      <li>✅ 5번째 돌다리부터 level 1, 2, 3...</li>
+      <li>📐 돌다리 크기에 비례해 서클 크기 조정</li>
+      <li>💾 비율 JSON으로 사전 정의</li>
+      <li>📱 런타임에 viewport 크기 × 비율</li>
+    </ul>
+
+    <h3 style="margin-top:20px">돌다리 측정 방법</h3>
+    <div class="options" style="margin-top:8px">
+      <div class="option" data-choice="a" onclick="toggleSelect(this)">
+        <div class="letter">A</div>
+        <div class="content">
+          <h3>인터랙티브 클릭 툴</h3>
+          <p>브라우저에서 이미지 위를 직접 클릭해 돌다리 중심+크기 수집. 가장 정확하고 직관적.</p>
+        </div>
+      </div>
+      <div class="option" data-choice="b" onclick="toggleSelect(this)">
+        <div class="letter">B</div>
+        <div class="content">
+          <h3>Python 스크립트 자동 감지</h3>
+          <p>PIL/OpenCV로 색상 기반 돌다리 영역 자동 추출. 빠르지만 검토 필요.</p>
+        </div>
+      </div>
+      <div class="option" data-choice="c" onclick="toggleSelect(this)">
+        <div class="letter">C</div>
+        <div class="content">
+          <h3>내가 직접 측정해서 JSON 작성</h3>
+          <p>이미지 보면서 픽셀 좌표 수동 계산. 가장 간단하나 오차 가능.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
