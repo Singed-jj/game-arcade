@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Royal Puzzle",
+    "description": "탈출! 곰사원 - Match-3 퍼즐",
+    "url": "https://royal-puzzle.vercel.app",
+    "tags": ["puzzle", "match-3", "phaser"]
+  },
+  {
+    "name": "Royal Puzzle 2",
+    "description": "Gem Match-3 퍼즐",
+    "url": "https://royal-puzzle-2.vercel.app",
+    "tags": ["puzzle", "match-3", "phaser"]
+  },
+  {
+    "name": "Royal Puzzle 3",
+    "description": "Match-3 퍼즐 (Godot 4)",
+    "url": "https://royal-puzzle-3.vercel.app",
+    "tags": ["puzzle", "match-3", "godot"]
+  },
+  {
+    "name": "Royal Puzzle 4",
+    "description": "Royal Puzzle 시리즈 4탄 (Godot 4)",
+    "url": "",
+    "tags": ["puzzle", "godot"]
+  },
+  {
+    "name": "Food Crush",
+    "description": "Match-3 음식 퍼즐 (두잇 프로모션)",
+    "url": "https://food-crush-blue.vercel.app",
+    "tags": ["puzzle", "match-3", "godot"]
+  },
+  {
+    "name": "Food Crush 2",
+    "description": "Match-3 음식 퍼즐 2탄 (TypeScript + Vite)",
+    "url": "",
+    "tags": ["puzzle", "match-3", "typescript"]
+  },
+  {
+    "name": "Block Blast",
+    "description": "8x8 블록 배치 퍼즐",
+    "url": "https://block-blast-lake.vercel.app",
+    "tags": ["puzzle", "block", "godot"]
+  },
+  {
+    "name": "Block Blast 2",
+    "description": "Block Blast 시리즈 2탄 (Godot 4)",
+    "url": "",
+    "tags": ["puzzle", "block", "godot"]
+  },
+  {
+    "name": "Township",
+    "description": "Township 스타일 게임 (Godot 4)",
+    "url": "",
+    "tags": ["simulation", "godot"]
+  },
+  {
+    "name": "Last War Survival",
+    "description": "Last War Survival (Godot 4)",
+    "url": "",
+    "tags": ["survival", "godot"]
+  }
+]
