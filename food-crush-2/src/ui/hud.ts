@@ -11,6 +11,7 @@ export class HUD {
   private recoveryInterval: ReturnType<typeof setInterval> | null = null
   private heartManager: HeartManager | null = null
   private currentHeartCount = MAX_HEARTS
+  private homeBtnEl!: HTMLElement
   setOnBack!: (fn: (() => void) | null) => void
 
   constructor(heartManager?: HeartManager) {
@@ -21,16 +22,16 @@ export class HUD {
     this.el.style.background = 'linear-gradient(180deg, rgba(0,0,0,0.45) 0%, transparent 100%)'
 
     // 뒤로가기 버튼
-    const homeBtn = document.createElement('button')
-    homeBtn.textContent = '←'
-    homeBtn.className = 'text-white/90 text-xl font-bold w-8 h-8 flex items-center justify-center active:scale-90 transition-transform rounded-full'
-    homeBtn.style.background = 'rgba(255,255,255,0.12)'
+    this.homeBtnEl = document.createElement('button')
+    this.homeBtnEl.textContent = '←'
+    this.homeBtnEl.className = 'text-white/90 text-xl font-bold w-8 h-8 flex items-center justify-center active:scale-90 transition-transform rounded-full'
+    this.homeBtnEl.style.background = 'rgba(255,255,255,0.12)'
     let onBack: (() => void) | null = null
-    homeBtn.addEventListener('click', () => {
+    this.homeBtnEl.addEventListener('click', () => {
       if (onBack) onBack()
       else eventBus.emit('screen:change', { screen: 'map' })
     })
-    this.el.appendChild(homeBtn)
+    this.el.appendChild(this.homeBtnEl)
     this.setOnBack = (fn: (() => void) | null) => { onBack = fn }
 
     // 로고
@@ -134,6 +135,9 @@ export class HUD {
     // 숫자 카운터 업데이트
     this.pieceCountEl.textContent = `${count}/${PIECES_FOR_GACHA}`
   }
+
+  hideBack(): void { this.homeBtnEl.style.visibility = 'hidden' }
+  showBack(): void { this.homeBtnEl.style.visibility = '' }
 
   private startRecoveryTimer(): void {
     if (this.recoveryInterval) return

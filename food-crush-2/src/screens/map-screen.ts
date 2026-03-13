@@ -5,6 +5,12 @@ import type { PieceManager } from '@/state/piece-manager'
 import { HUD } from '@/ui/hud'
 import stoneMapData from '@/assets/data/stone-map.json'
 
+/** 레벨별 반지름 오버라이드 (px). 없으면 stone 기반 자동 계산. */
+const LEVEL_RADIUS_OVERRIDE: Record<number, number> = {
+  1: 20, 2: 20, 3: 20, 5: 20, 6: 20,
+  4: 36, 13: 36,
+}
+
 interface StoneEntry {
   cx: number
   cy: number
@@ -69,7 +75,7 @@ function getNodePosition(
 
   // 돌다리의 너비(px)를 기준으로 반지름 산출 (최소 24, 최대 40)
   const stoneWidthPx = stone.w * stoneMap.imageSize.w * scale
-  const radius = Math.min(40, Math.max(24, Math.round(stoneWidthPx * 0.55)))
+  const radius = LEVEL_RADIUS_OVERRIDE[level] ?? Math.min(40, Math.max(24, Math.round(stoneWidthPx * 0.55)))
 
   return { left: px, top: py, radius }
 }
@@ -91,6 +97,7 @@ export class MapScreen {
     headerPanel.className = 'absolute top-0 left-0 right-0 z-20 bg-black/30 backdrop-blur-sm'
     headerPanel.style.paddingTop = 'var(--ticker-h)'
     const hud = new HUD(heartManager)
+    hud.hideBack()
     hud.updateHearts(heartManager.getHearts())
     hud.updatePieces(pieceManager.getPieces())
     headerPanel.appendChild(hud.el)
@@ -98,7 +105,7 @@ export class MapScreen {
 
     const nodeContainer = document.createElement('div')
     nodeContainer.className = 'absolute inset-0'
-    const maxVisible = save.unlockedLevel + 3
+    const maxVisible = Math.min(save.unlockedLevel + 3, 13)
 
     // 컨테이너 크기 취득 (DOM에 마운트된 후 실제 크기)
     const containerW = container.offsetWidth || 375

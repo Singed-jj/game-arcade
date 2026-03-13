@@ -98,7 +98,8 @@ export class NoHeartsScreen {
       document.body.appendChild(t)
       setTimeout(() => {
         t.remove()
-        eventBus.emit('screen:change', { screen: 'map' })
+        const nextScreen = pieceManager.canGacha() ? 'gacha' : 'map'
+        eventBus.emit('screen:change', { screen: nextScreen })
       }, 1500)
     })
     card.appendChild(orderBtn)
@@ -140,7 +141,8 @@ export class NoHeartsScreen {
       document.body.appendChild(t)
       setTimeout(() => {
         t.remove()
-        eventBus.emit('screen:change', { screen: 'map' })
+        const nextScreen = pieceManager.canGacha() ? 'gacha' : 'map'
+        eventBus.emit('screen:change', { screen: nextScreen })
       }, 1500)
     })
     card.appendChild(shareBlock)

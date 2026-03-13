@@ -81,10 +81,20 @@ export class BlockView {
   stopHint(): void { this.el.classList.remove('animate-hint') }
 
   setSelected(selected: boolean): void {
-    this.el.style.outline = selected ? '3px solid rgba(255,255,255,0.9)' : ''
-    this.el.style.outlineOffset = '1px'
-    this.el.style.zIndex = selected ? '10' : ''
-    this.el.style.filter = selected ? 'brightness(1.3)' : ''
+    if (selected) {
+      this.el.classList.add('animate-block-pickup')
+      this.el.style.outline = '3px solid rgba(255,255,255,0.9)'
+      this.el.style.outlineOffset = '1px'
+      this.el.style.zIndex = '10'
+      this.el.style.filter = 'brightness(1.3)'
+    } else {
+      this.el.classList.remove('animate-block-pickup')
+      this.el.style.outline = ''
+      this.el.style.outlineOffset = ''
+      this.el.style.zIndex = ''
+      this.el.style.filter = ''
+      this.updatePosition()
+    }
   }
 
   destroy(): void { this.el.remove() }
