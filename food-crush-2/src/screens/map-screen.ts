@@ -34,9 +34,10 @@ function computeContainTransform(
 ): { scale: number; offsetX: number; offsetY: number } {
   const scale = Math.min(containerW / imgW, containerH / imgH)
   const renderedW = imgW * scale
-  // backgroundPosition: top center → X는 중앙 정렬, Y는 0
+  const renderedH = imgH * scale
+  // backgroundPosition: center center → X·Y 모두 중앙 정렬
   const offsetX = (containerW - renderedW) / 2
-  const offsetY = 0
+  const offsetY = (containerH - renderedH) / 2
   return { scale, offsetX, offsetY }
 }
 
@@ -101,7 +102,7 @@ export class MapScreen {
       'background-image:url(/assets/bg/stage-map.png);' +
       'background-size:contain;' +
       'background-repeat:no-repeat;' +
-      'background-position:top center;'
+      'background-position:center center;'
     container.appendChild(mapBg)
 
     // --- 헤더 (반투명 배경 패널) ---
