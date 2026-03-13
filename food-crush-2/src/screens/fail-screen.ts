@@ -1,16 +1,17 @@
 import { eventBus } from '@/state/event-bus'
 import type { HeartManager } from '@/state/heart-manager'
+import type { PieceManager } from '@/state/piece-manager'
 
-function showToast(message: string): void {
+function showRewardToast(message: string, color: string): void {
   const toast = document.createElement('div')
   toast.textContent = message
-  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:white;padding:8px 16px;border-radius:8px;font-size:13px;z-index:9999;'
+  toast.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:${color};color:white;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:bold;z-index:9999;white-space:nowrap;`
   document.body.appendChild(toast)
-  setTimeout(() => toast.remove(), 2000)
+  setTimeout(() => toast.remove(), 1500)
 }
 
 export class FailScreen {
-  constructor(container: HTMLElement, heartManager: HeartManager, data?: Record<string, unknown>) {
+  constructor(container: HTMLElement, heartManager: HeartManager, pieceManager: PieceManager, data?: Record<string, unknown>) {
     const level = (data?.level as number) ?? 1
     const hearts = heartManager.getHearts()
 
@@ -189,12 +190,25 @@ export class FailScreen {
 
     // [🛒 주문하고 뽑기] 버튼 (1순위)
     const orderBtn = document.createElement('button')
-    orderBtn.textContent = '🛒 주문하고 뽑기'
     orderBtn.className = 'w-full py-4 font-bold rounded-2xl text-lg text-white transition-transform active:scale-95 mb-2'
     orderBtn.style.background = 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)'
     orderBtn.style.boxShadow = '0 4px 20px rgba(249,115,22,0.5)'
+    const orderTop = document.createElement('div')
+    orderTop.textContent = '🛒 주문하고 뽑기'
+    orderTop.className = 'font-bold text-lg'
+    const orderSub = document.createElement('div')
+    orderSub.textContent = '❤️ 하트 3개 + 🎟️ 뽑기 파편 3개'
+    orderSub.className = 'text-xs opacity-80 mt-0.5'
+    orderBtn.appendChild(orderTop)
+    orderBtn.appendChild(orderSub)
     orderBtn.addEventListener('click', () => {
-      showToast('현재 구현중인 화면입니다')
+      heartManager.refillAll()
+      pieceManager.addPieces(3)
+      showRewardToast('❤️❤️❤️ 하트 3개 회복! 🎟️ 파편 3개 지급!', 'rgba(20,120,40,0.95)')
+      setTimeout(() => {
+        const nextScreen = pieceManager.canGacha() ? 'gacha' : 'map'
+        eventBus.emit('screen:change', { screen: nextScreen })
+      }, 1500)
     })
     card.appendChild(orderBtn)
 
@@ -263,31 +277,51 @@ export class FailScreen {
 
       // [🛒 주문하고 회복] 버튼
       const popupOrderBtn = document.createElement('button')
-      popupOrderBtn.textContent = '🛒 주문하고 회복'
       popupOrderBtn.className = 'w-full py-3 font-bold rounded-2xl text-base text-white transition-transform active:scale-95 mb-3'
       popupOrderBtn.style.background = 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)'
       popupOrderBtn.style.boxShadow = '0 4px 20px rgba(249,115,22,0.4)'
+      const popOrderTop = document.createElement('div')
+      popOrderTop.textContent = '🛒 주문하고 회복'
+      popOrderTop.className = 'font-bold text-base'
+      const popOrderSub = document.createElement('div')
+      popOrderSub.textContent = '❤️ 하트 3개 + 🎟️ 파편 3개'
+      popOrderSub.className = 'text-xs opacity-80 mt-0.5'
+      popupOrderBtn.appendChild(popOrderTop)
+      popupOrderBtn.appendChild(popOrderSub)
       popupOrderBtn.addEventListener('click', () => {
-        showToast('현재 구현중인 화면입니다')
+        heartManager.refillAll()
+        pieceManager.addPieces(3)
+        showRewardToast('❤️❤️❤️ 하트 3개 회복! 🎟️ 파편 3개 지급!', 'rgba(20,120,40,0.95)')
+        setTimeout(() => {
+          const nextScreen = pieceManager.canGacha() ? 'gacha' : 'game'
+          eventBus.emit('screen:change', { screen: nextScreen, data: nextScreen === 'game' ? { level } : undefined })
+        }, 1500)
       })
       popup.appendChild(popupOrderBtn)
 
       // [👥 친구 링크 공유] 버튼
       const shareBtn = document.createElement('button')
-      shareBtn.textContent = '👥 친구 링크 공유'
       shareBtn.className = 'w-full py-3 font-bold rounded-2xl text-base text-white transition-transform active:scale-95 mb-1'
       shareBtn.style.background = 'rgba(255,255,255,0.12)'
       shareBtn.style.border = '1px solid rgba(255,255,255,0.15)'
+      const shareTop = document.createElement('div')
+      shareTop.textContent = '👥 친구 링크 공유'
+      shareTop.className = 'font-bold text-base'
+      const shareSub = document.createElement('div')
+      shareSub.textContent = '❤️ 하트 +1 · 🎟️ 파편 +1'
+      shareSub.className = 'text-xs opacity-60 mt-0.5'
+      shareBtn.appendChild(shareTop)
+      shareBtn.appendChild(shareSub)
       shareBtn.addEventListener('click', () => {
-        showToast('현재 구현중인 화면입니다')
+        heartManager.addHeart(1)
+        pieceManager.addPieces(1)
+        showRewardToast('❤️ 하트 +1 · 🎟️ 파편 +1 받았어요!', 'rgba(20,100,180,0.95)')
+        setTimeout(() => {
+          const nextScreen = pieceManager.canGacha() ? 'gacha' : 'map'
+          eventBus.emit('screen:change', { screen: nextScreen })
+        }, 1500)
       })
       popup.appendChild(shareBtn)
-
-      // 공유 설명
-      const shareDesc = document.createElement('p')
-      shareDesc.textContent = '친구가 클릭하면 ❤️+1 · 🎟️+1'
-      shareDesc.className = 'text-white/40 text-xs mb-5'
-      popup.appendChild(shareDesc)
 
       // ⏰ 기다릴게요 텍스트 링크
       const waitLink = document.createElement('button')

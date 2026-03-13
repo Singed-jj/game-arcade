@@ -85,7 +85,7 @@ class App {
         new ClearScreen(this.app, this.pieceManager, data)
         break
       case 'fail':
-        new FailScreen(this.app, this.heartManager, data)
+        new FailScreen(this.app, this.heartManager, this.pieceManager, data)
         break
       case 'gacha':
         new GachaScreen(this.app, this.pieceManager, this.toolManager)
