@@ -94,7 +94,7 @@ class App {
         new InventoryScreen(this.app, this.toolManager)
         break
       case 'no-hearts':
-        new NoHeartsScreen(this.app, this.heartManager)
+        new NoHeartsScreen(this.app, this.heartManager, this.pieceManager)
         break
     }
   }

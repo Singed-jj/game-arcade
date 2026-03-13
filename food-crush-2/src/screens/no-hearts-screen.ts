@@ -1,9 +1,10 @@
 // src/screens/no-hearts-screen.ts
 import { eventBus } from '@/state/event-bus'
 import type { HeartManager } from '@/state/heart-manager'
+import type { PieceManager } from '@/state/piece-manager'
 
 export class NoHeartsScreen {
-  constructor(container: HTMLElement, heartManager: HeartManager) {
+  constructor(container: HTMLElement, heartManager: HeartManager, pieceManager: PieceManager) {
     container.className = 'relative w-full h-dvh max-w-[375px] mx-auto flex flex-col items-center justify-center overflow-hidden'
     container.style.background = 'linear-gradient(180deg, #1a0a3e 0%, #0e0820 100%)'
     container.style.paddingTop = 'var(--ticker-h)'
@@ -89,11 +90,16 @@ export class NoHeartsScreen {
     orderBtn.appendChild(orderTop)
     orderBtn.appendChild(orderSub)
     orderBtn.addEventListener('click', () => {
+      heartManager.refillAll()
+      pieceManager.addPieces(3)
       const t = document.createElement('div')
-      t.textContent = '현재 구현중인 화면입니다'
-      t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:white;padding:8px 16px;border-radius:8px;font-size:13px;z-index:9999;'
+      t.textContent = '❤️❤️❤️ 하트 3개 회복! 🎟️ 조각 3개 지급!'
+      t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(20,120,40,0.95);color:white;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:bold;z-index:9999;white-space:nowrap;'
       document.body.appendChild(t)
-      setTimeout(() => t.remove(), 2000)
+      setTimeout(() => {
+        t.remove()
+        eventBus.emit('screen:change', { screen: 'map' })
+      }, 1500)
     })
     card.appendChild(orderBtn)
 
@@ -126,11 +132,16 @@ export class NoHeartsScreen {
     shareBlock.appendChild(shareEasy)
 
     shareBlock.addEventListener('click', () => {
+      heartManager.addHeart(1)
+      pieceManager.addPieces(1)
       const t = document.createElement('div')
-      t.textContent = '현재 구현중인 화면입니다'
-      t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:white;padding:8px 16px;border-radius:8px;font-size:13px;z-index:9999;'
+      t.textContent = '❤️ 하트 +1 · 🎟️ 조각 +1 받았어요!'
+      t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(20,100,180,0.95);color:white;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:bold;z-index:9999;white-space:nowrap;'
       document.body.appendChild(t)
-      setTimeout(() => t.remove(), 2000)
+      setTimeout(() => {
+        t.remove()
+        eventBus.emit('screen:change', { screen: 'map' })
+      }, 1500)
     })
     card.appendChild(shareBlock)
 
