@@ -59,6 +59,11 @@ export class GameInfoBar {
   updateMoves(remaining: number): void {
     this.movesEl.textContent = String(remaining)
 
+    // 바운스 애니메이션 트리거
+    this.movesEl.style.animation = 'none'
+    void this.movesEl.offsetHeight // force reflow
+    this.movesEl.style.animation = 'moves-bounce 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)'
+
     if (remaining <= 3) {
       this.movesEl.className = 'text-red-400 font-bold text-2xl text-center min-w-[48px] animate-bomb-shake'
       if (!this.wasUrgent) {

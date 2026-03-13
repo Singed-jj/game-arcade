@@ -1,6 +1,6 @@
 // src/screens/game-screen.ts
 import { BoardLogic, type CascadeStep } from '@/core/board-logic'
-import { type Position, type BlockType, type BoardGrid, ToolType, CASCADE_CONFIG, PIECES_ON_CLEAR, BLOCK_EMOJIS, BLOCK_GRADIENTS } from '@/core/types'
+import { type Position, type BlockType, type BoardGrid, ToolType, BLOCK_EMOJIS, BLOCK_GRADIENTS, CELL_SIZE, BOARD_COLS, BOARD_ROWS } from '@/core/types'
 import { getLevelConfig } from '@/core/level-data'
 import { getRocketTargets, getBombTargets, getRainbowTargets } from '@/core/tool-effects'
 import { eventBus } from '@/state/event-bus'
@@ -317,13 +317,28 @@ export class GameScreen {
     if (tool === ToolType.ROCKET) {
       soundManager.play('rocket')
       this.shake.shake(3)
+      await new Promise<void>(resolve => {
+        this.effects.rocketBeam({ col, row }, true, resolve)
+      })
     } else if (tool === ToolType.BOMB) {
       soundManager.play('bomb')
       this.shake.shake(5)
       this.effects.flash('rgba(255,140,0,0.25)')
+      this.effects.shockwave({ col, row })
     } else {
       soundManager.play('rainbow')
-      this.effects.flash('rgba(180,0,255,0.2)')
+      const targetEls = targets
+        .map((p: Position) => this.boardRenderer.getBlock(p.col, p.row)?.el)
+        .filter((el: HTMLElement | undefined): el is HTMLElement => el !== undefined)
+      if (targetEls.length > 0) {
+        await this.effects.rainbowSuckIn(
+          targetEls,
+          this.effects.boardCenterX,
+          this.effects.boardCenterY
+        )
+        this.effects.flash('rgba(180,0,255,0.3)')
+        this.shake.shake(6, 300)
+      }
     }
 
     // Count block types BEFORE removal
@@ -360,6 +375,7 @@ export class GameScreen {
       const stars = this.gameState.calculateStars()
       this.gameState.endLevel()
       soundManager.play('clear')
+      await this.sweepRemainingBlocks()
       setTimeout(() => {
         eventBus.emit('screen:change', {
           screen: 'clear',
@@ -457,6 +473,7 @@ export class GameScreen {
       this.gameState.endLevel()
       soundManager.play('clear')
       eventBus.emit('game:level-complete', { stars, movesLeft: this.gameState.getRemainingMoves() })
+      await this.sweepRemainingBlocks()
       setTimeout(() => {
         eventBus.emit('screen:change', {
           screen: 'clear',
@@ -637,6 +654,7 @@ export class GameScreen {
     for (const match of step.matches) {
       for (const cell of match.cells) {
         this.effects.spawnBlockPop(cell, match.blockType)
+        this.effects.blockFlash(cell)
         const view = this.boardRenderer.getBlock(cell.col, cell.row)
         if (view) popPromises.push(view.animatePop())
       }
@@ -671,18 +689,57 @@ export class GameScreen {
     }
 
     // 4) 점수 float + cascade 텍스트
-    const multiplier = cascadeIndex === 0 ? 1 : 1 + cascadeIndex * 0.5
-    const scoreGain = Math.round(totalMatched * 10 * multiplier)
-    this.effects.showScoreFloat(scoreGain, this.effects.boardCenterX, this.effects.boardCenterY - 30)
+    if (cascadeIndex >= 1) {
+      const TEXTS = ['', 'Good!', 'Great!!', 'Amazing!!!', 'INCREDIBLE!!!!']
+      const COLORS = ['', 'white', '#FFD600', '#FF9A3C', '#FF0080']
+      const SIZES = [0, 24, 32, 40, 48]
+      const SHAKES = [0, 2, 4, 6, 8]
+      const idx = Math.min(cascadeIndex, 4)
 
-    const cascadeNum = cascadeIndex + 1
-    if (cascadeNum >= 2 && cascadeNum < CASCADE_CONFIG.length) {
-      const cfg = CASCADE_CONFIG[cascadeNum]
-      this.effects.showText(cfg.text, this.effects.boardCenterX, this.effects.boardCenterY, cfg.fontSize, cfg.color)
-      this.shake.shake(cfg.shakeIntensity)
+      this.effects.showText(
+        TEXTS[idx],
+        this.effects.boardCenterX,
+        this.effects.boardCenterY,
+        SIZES[idx],
+        COLORS[idx],
+      )
+      this.shake.shake(SHAKES[idx], 200 + idx * 25)
+
+      if (cascadeIndex >= 2) {
+        this.effects.flash('rgba(255,255,255,0.15)')
+      }
+    }
+
+    if (step.matches.length > 0 && step.matches[0].cells.length > 0) {
+      const firstCell = step.matches[0].cells[0]
+      const px = this.effects.boardOffsetX + firstCell.col * CELL_SIZE + CELL_SIZE / 2
+      const py = this.effects.boardOffsetY + firstCell.row * CELL_SIZE
+      const totalMatchedForScore = step.matches.reduce((sum, m) => sum + m.cells.length, 0)
+      const score = totalMatchedForScore * 10 * (cascadeIndex === 0 ? 1 : 1 + cascadeIndex * 0.5)
+      this.effects.showScoreFloat(Math.round(score), px, py)
     }
 
     // spawn 애니메이션 완료 대기 (0.22s)
     await new Promise(r => setTimeout(r, 250))
+  }
+
+  private async sweepRemainingBlocks(): Promise<void> {
+    const board = this.boardLogic.getBoard()
+    const SWEEP_DELAY = 80  // ms per row
+
+    for (let row = 0; row < BOARD_ROWS; row++) {
+      await new Promise(r => setTimeout(r, SWEEP_DELAY))
+      for (let col = 0; col < BOARD_COLS; col++) {
+        const blockType = board[col]?.[row]
+        if (blockType !== undefined && blockType !== -1) {
+          const view = this.boardRenderer.getBlock(col, row)
+          if (view) {
+            this.effects.spawnBlockPop({ col, row }, blockType as BlockType)
+            void view.animatePop()
+          }
+        }
+      }
+    }
+    await new Promise(r => setTimeout(r, 300))
   }
 }
