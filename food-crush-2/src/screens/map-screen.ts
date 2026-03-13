@@ -81,10 +81,28 @@ export class MapScreen {
     pieceManager: PieceManager,
   ) {
     container.className = 'relative w-full h-dvh max-w-[375px] mx-auto overflow-hidden'
-    container.style.backgroundImage = 'url(/assets/bg/stage-map.png)'
-    container.style.backgroundSize = 'contain'
-    container.style.backgroundPosition = 'top center'
-    container.style.backgroundColor = '#4a7c2f'
+    container.style.backgroundColor = '#2d5a1b'
+
+    // --- 블러 채움 레이어 (이미지 엣지 색상을 cover + blur로 채움) ---
+    const blurBg = document.createElement('div')
+    blurBg.style.cssText =
+      'position:absolute;top:0;left:0;right:0;bottom:0;' +
+      'background-image:url(/assets/bg/stage-map.png);' +
+      'background-size:cover;' +
+      'background-position:center center;' +
+      'filter:blur(28px) saturate(1.5) brightness(0.65);' +
+      'transform:scale(1.2);'   // 블러 엣지 아티팩트 제거
+    container.appendChild(blurBg)
+
+    // --- 실제 맵 이미지 (contain, no-repeat, 1회만) ---
+    const mapBg = document.createElement('div')
+    mapBg.style.cssText =
+      'position:absolute;top:0;left:0;right:0;bottom:0;' +
+      'background-image:url(/assets/bg/stage-map.png);' +
+      'background-size:contain;' +
+      'background-repeat:no-repeat;' +
+      'background-position:top center;'
+    container.appendChild(mapBg)
 
     // --- 헤더 (반투명 배경 패널) ---
     const headerPanel = document.createElement('div')
@@ -99,6 +117,7 @@ export class MapScreen {
 
     const nodeContainer = document.createElement('div')
     nodeContainer.className = 'absolute inset-0'
+    nodeContainer.style.zIndex = '2'
     const maxVisible = Math.min(save.unlockedLevel + 3, 20)
 
     // 컨테이너 크기 취득 (DOM에 마운트된 후 실제 크기)
