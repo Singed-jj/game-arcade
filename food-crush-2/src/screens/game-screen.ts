@@ -386,9 +386,7 @@ export class GameScreen {
       soundManager.play('rocket')
       hapticManager.trigger('rocket')
       this.shake.shake(3)
-      await new Promise<void>(resolve => {
-        this.effects.rocketBeam({ col, row }, true, resolve)
-      })
+      await this.animateRocketLaunch(col, row, direction!, targets)
     } else if (tool === ToolType.BOMB) {
       soundManager.play('bomb', 1.0, 1.0)
       hapticManager.trigger('bomb')
@@ -417,7 +415,9 @@ export class GameScreen {
     for (const pos of targets) {
       const bt = this.boardLogic.getBlock(pos.col, pos.row)
       if (bt !== -1) {
-        this.effects.spawnBlockPop(pos, bt as import('@/core/types').BlockType)
+        if (tool !== ToolType.ROCKET) {
+          this.effects.spawnBlockPop(pos, bt as import('@/core/types').BlockType)
+        }
         counts.set(bt as import('@/core/types').BlockType, (counts.get(bt as import('@/core/types').BlockType) ?? 0) + 1)
       }
     }
@@ -438,7 +438,7 @@ export class GameScreen {
     }
     this.gameState.addScore(targets.length * 20)
 
-    await new Promise(r => setTimeout(r, 400))
+    await new Promise(r => setTimeout(r, tool === ToolType.ROCKET ? 100 : 400))
 
     this.boardRenderer.renderBoard(this.boardLogic.getBoard(), true)
 
@@ -471,6 +471,76 @@ export class GameScreen {
       this.boardRenderer.unlockInput()
       this.startHintTimer()
     }
+  }
+
+  private async animateRocketLaunch(
+    col: number,
+    row: number,
+    direction: 'horizontal' | 'vertical',
+    targets: Position[],
+  ): Promise<void> {
+    const CELL_DUR = 45   // ms per cell
+    const boardEl = this.boardRenderer.getBoardElement()
+    const isHoriz = direction === 'horizontal'
+
+    const directions = isHoriz
+      ? [{ dc: -1, dr: 0, rot: '180deg' }, { dc: 1, dr: 0, rot: '0deg' }]
+      : [{ dc: 0, dr: -1, rot: '270deg' }, { dc: 0, dr: 1, rot: '90deg' }]
+
+    const startX = col * CELL_SIZE + CELL_SIZE / 2
+    const startY = row * CELL_SIZE + CELL_SIZE / 2
+
+    const getDistance = (p: Position) =>
+      isHoriz ? Math.abs(p.col - col) : Math.abs(p.row - row)
+
+    const maxDist = targets.length > 0 ? Math.max(...targets.map(getDistance)) : 0
+
+    // 발동 셀 즉시 팝
+    const originView = this.boardRenderer.getBlock(col, row)
+    if (originView) {
+      const bt = this.boardLogic.getBlock(col, row)
+      if (bt !== -1) this.effects.spawnBlockPop({ col, row }, bt as BlockType)
+      this.boardRenderer.removeBlock(col, row)
+      void originView.animatePop()
+    }
+
+    const spritePromises = directions.map(({ dc, dr, rot }) => {
+      const sprite = document.createElement('div')
+      sprite.className = 'rocket-sprite'
+      sprite.textContent = '🚀'
+      sprite.style.transform = `translate(${startX - 20}px, ${startY - 11}px) rotate(${rot})`
+      boardEl.appendChild(sprite)
+
+      return new Promise<void>(resolve => {
+        let dist = 0
+        const step = () => {
+          dist++
+          const nx = startX + dc * dist * CELL_SIZE
+          const ny = startY + dr * dist * CELL_SIZE
+          sprite.style.transform = `translate(${nx - 20}px, ${ny - 11}px) rotate(${rot})`
+
+          const tc = col + dc * dist
+          const tr = row + dr * dist
+          const view = this.boardRenderer.getBlock(tc, tr)
+          if (view) {
+            const bt = this.boardLogic.getBlock(tc, tr)
+            if (bt !== -1) this.effects.spawnBlockPop({ col: tc, row: tr }, bt as BlockType)
+            this.boardRenderer.removeBlock(tc, tr)
+            void view.animatePop()
+          }
+
+          if (dist > maxDist + 1) {
+            sprite.remove()
+            resolve()
+            return
+          }
+          setTimeout(step, CELL_DUR)
+        }
+        setTimeout(step, CELL_DUR)
+      })
+    })
+
+    await Promise.all(spritePromises)
   }
 
   private startHintTimer(): void {
