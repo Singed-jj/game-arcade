@@ -69,6 +69,7 @@ export class BoardRenderer {
     let startPos: Position | null = null
     let startPixel: { x: number; y: number } | null = null
     let swapFired = false
+    let pendingSwipeTo: Position | null = null
     const SWIPE_THRESHOLD = CELL_SIZE / 3  // ~15px
 
     this.boardEl.addEventListener('pointerdown', (e) => {
@@ -76,6 +77,7 @@ export class BoardRenderer {
       startPos = this.posFromEvent(e)
       startPixel = { x: e.clientX, y: e.clientY }
       swapFired = false
+      pendingSwipeTo = null
       this.boardEl.setPointerCapture(e.pointerId)
     })
 
@@ -94,18 +96,37 @@ export class BoardRenderer {
       if (direction && direction.col >= 0 && direction.col < BOARD_COLS &&
           direction.row >= 0 && direction.row < BOARD_ROWS) {
         swapFired = true
-        if (this.toolMode) {
-          eventBus.emit('board:cell-tapped', { col: startPos.col, row: startPos.row })
-        } else {
-          eventBus.emit('board:swap-requested', { from: startPos, to: direction })
-        }
-        startPos = null
+        pendingSwipeTo = direction
       }
     })
 
     this.boardEl.addEventListener('pointerup', (e) => {
-      if (this.inputLocked) { startPos = null; return }
-      if (!startPos || swapFired) { startPos = null; return }
+      if (this.inputLocked) {
+        startPos = null
+        startPixel = null
+        pendingSwipeTo = null
+        swapFired = false
+        return
+      }
+      if (!startPos) {
+        startPixel = null
+        pendingSwipeTo = null
+        swapFired = false
+        return
+      }
+
+      if (swapFired && pendingSwipeTo) {
+        if (this.toolMode) {
+          eventBus.emit('board:cell-tapped', { col: startPos.col, row: startPos.row })
+        } else {
+          eventBus.emit('board:swap-requested', { from: startPos, to: pendingSwipeTo })
+        }
+        startPos = null
+        startPixel = null
+        pendingSwipeTo = null
+        swapFired = false
+        return
+      }
 
       const endPos = this.posFromEvent(e)
       if (endPos && endPos.col === startPos.col && endPos.row === startPos.row) {
@@ -127,11 +148,15 @@ export class BoardRenderer {
         }
       }
       startPos = null
+      startPixel = null
+      pendingSwipeTo = null
+      swapFired = false
     })
 
     this.boardEl.addEventListener('pointercancel', () => {
       startPos = null
       startPixel = null
+      pendingSwipeTo = null
       swapFired = false
     })
   }

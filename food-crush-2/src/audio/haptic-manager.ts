@@ -31,6 +31,27 @@ export class HapticManager {
   private static _instance: HapticManager
   private enabled = true
 
+  private canVibrate(): boolean {
+    if (!('vibrate' in navigator) || typeof navigator.vibrate !== 'function') {
+      console.debug('[haptic] navigator.vibrate not available')
+      return false
+    }
+    if (!window.isSecureContext) {
+      console.debug('[haptic] blocked: insecure context')
+      return false
+    }
+    if (document.visibilityState !== 'visible') {
+      console.debug('[haptic] blocked: document is not visible')
+      return false
+    }
+    const userActivation = navigator.userActivation
+    if (userActivation && !userActivation.hasBeenActive) {
+      console.debug('[haptic] blocked: no user activation yet')
+      return false
+    }
+    return true
+  }
+
   static getInstance(): HapticManager {
     if (!HapticManager._instance) HapticManager._instance = new HapticManager()
     return HapticManager._instance
@@ -47,12 +68,10 @@ export class HapticManager {
     }
 
     // Web Vibration API (Android)
-    if (navigator.vibrate) {
-      const result = navigator.vibrate(VIBRATION_PATTERNS[event])
-      console.debug(`[haptic] ${event} → vibrate() = ${result}`)
-    } else {
-      console.debug('[haptic] navigator.vibrate not available')
-    }
+    if (!this.canVibrate()) return
+
+    const result = navigator.vibrate(VIBRATION_PATTERNS[event])
+    console.debug(`[haptic] ${event} → vibrate() = ${result}`)
   }
 
   setEnabled(v: boolean): void { this.enabled = v }
