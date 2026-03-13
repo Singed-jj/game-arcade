@@ -1,0 +1,184 @@
+name: Deploy Changed Games
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      game:
+        description: 'Force deploy a specific game (empty = auto-detect changes)'
+        required: false
+        default: ''
+        type: choice
+        options:
+          - ''
+          - food-crush
+          - food-crush-2
+          - block-blast-2
+          - royal-puzzle-4
+          - township
+          - last-war-survival
+
+env:
+  VERCEL_ORG_ID: team_w8kyxaoSa4SU7lqxh3Tsry48
+
+jobs:
+  detect-changes:
+    name: Detect Changed Games
+    runs-on: ubuntu-latest
+    outputs:
+      food-crush: ${{ steps.changes.outputs.food-crush }}
+      food-crush-2: ${{ steps.changes.outputs.food-crush-2 }}
+      block-blast-2: ${{ steps.changes.outputs.block-blast-2 }}
+      royal-puzzle-4: ${{ steps.changes.outputs.royal-puzzle-4 }}
+      township: ${{ steps.changes.outputs.township }}
+      last-war-survival: ${{ steps.changes.outputs.last-war-survival }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed games
+        id: changes
+        run: |
+          FORCE="${{ inputs.game }}"
+          CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo "")
+          echo "Changed files:"
+          echo "$CHANGED"
+
+          for game in food-crush food-crush-2 block-blast-2 royal-puzzle-4 township last-war-survival; do
+            if [ -n "$FORCE" ]; then
+              [ "$game" = "$FORCE" ] && result=true || result=false
+            else
+              echo "$CHANGED" | grep -q "^$game/" && result=true || result=false
+            fi
+            echo "$game=$result" >> $GITHUB_OUTPUT
+            echo "  $game: $result"
+          done
+
+  # ─────────────────────────────────────────────────────────────────
+  # 공통 배포 스텝 (static Godot export)
+  # ─────────────────────────────────────────────────────────────────
+  deploy-food-crush:
+    name: Deploy food-crush
+    needs: detect-changes
+    if: needs.detect-changes.outputs.food-crush == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install -g vercel@latest
+      - run: vercel pull --yes --environment=production --token ${{ secrets.VERCEL_TOKEN }} --cwd food-crush/
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: prj_MfUkUWaL26DA8E5oGHfnc0VIjtBn
+      - run: vercel deploy --prod --yes --token ${{ secrets.VERCEL_TOKEN }} --cwd food-crush/
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: prj_MfUkUWaL26DA8E5oGHfnc0VIjtBn
+
+  # food-crush-2: Vercel이 Vite 프로젝트 자동 감지 후 원격 빌드
+  # 사전 준비: GitHub Secret 'VERCEL_PROJECT_ID_FOOD_CRUSH_2' 설정 필요
+  deploy-food-crush-2:
+    name: Deploy food-crush-2
+    needs: detect-changes
+    if: needs.detect-changes.outputs.food-crush-2 == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install -g vercel@latest
+      - run: vercel pull --yes --environment=production --token ${{ secrets.VERCEL_TOKEN }} --cwd food-crush-2/
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_FOOD_CRUSH_2 }}
+      - run: vercel deploy --prod --yes --token ${{ secrets.VERCEL_TOKEN }} --cwd food-crush-2/
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_FOOD_CRUSH_2 }}
+
+  # 사전 준비: GitHub Secret 'VERCEL_PROJECT_ID_BLOCK_BLAST_2' 설정 필요
+  deploy-block-blast-2:
+    name: Deploy block-blast-2
+    needs: detect-changes
+    if: needs.detect-changes.outputs.block-blast-2 == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install -g vercel@latest
+      - run: vercel pull --yes --environment=production --token ${{ secrets.VERCEL_TOKEN }} --cwd block-blast-2/export/
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_BLOCK_BLAST_2 }}
+      - run: vercel deploy --prod --yes --token ${{ secrets.VERCEL_TOKEN }} --cwd block-blast-2/export/
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_BLOCK_BLAST_2 }}
+
+  # 사전 준비: GitHub Secret 'VERCEL_PROJECT_ID_ROYAL_PUZZLE_4' 설정 필요
+  deploy-royal-puzzle-4:
+    name: Deploy royal-puzzle-4
+    needs: detect-changes
+    if: needs.detect-changes.outputs.royal-puzzle-4 == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install -g vercel@latest
+      - run: vercel pull --yes --environment=production --token ${{ secrets.VERCEL_TOKEN }} --cwd royal-puzzle-4/export/
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_ROYAL_PUZZLE_4 }}
+      - run: vercel deploy --prod --yes --token ${{ secrets.VERCEL_TOKEN }} --cwd royal-puzzle-4/export/
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_ROYAL_PUZZLE_4 }}
+
+  deploy-township:
+    name: Deploy township
+    needs: detect-changes
+    if: needs.detect-changes.outputs.township == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install -g vercel@latest
+      - run: vercel pull --yes --environment=production --token ${{ secrets.VERCEL_TOKEN }} --cwd township/export/
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: prj_GMNyGERTwYN9BNW87AEoKXQXSmQ5
+      - run: vercel deploy --prod --yes --token ${{ secrets.VERCEL_TOKEN }} --cwd township/export/
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: prj_GMNyGERTwYN9BNW87AEoKXQXSmQ5
+
+  deploy-last-war-survival:
+    name: Deploy last-war-survival
+    needs: detect-changes
+    if: needs.detect-changes.outputs.last-war-survival == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install -g vercel@latest
+      - run: vercel pull --yes --environment=production --token ${{ secrets.VERCEL_TOKEN }} --cwd last-war-survival/export/
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: prj_ANsXe0cMEEDCnykw4x0HvpT1w2ad
+      - run: vercel deploy --prod --yes --token ${{ secrets.VERCEL_TOKEN }} --cwd last-war-survival/export/
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: prj_ANsXe0cMEEDCnykw4x0HvpT1w2ad
