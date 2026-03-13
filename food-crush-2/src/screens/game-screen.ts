@@ -383,20 +383,20 @@ export class GameScreen {
 
     // Visual effect + sound for tool use
     if (tool === ToolType.ROCKET) {
-      soundManager.play('rocket', 1.0, 0.5)
+      soundManager.play('rocket')
       hapticManager.trigger('rocket')
       this.shake.shake(3)
       await new Promise<void>(resolve => {
         this.effects.rocketBeam({ col, row }, true, resolve)
       })
     } else if (tool === ToolType.BOMB) {
-      soundManager.play('bomb')
+      soundManager.play('bomb', 1.0, 1.0)
       hapticManager.trigger('bomb')
       this.shake.shake(5)
       this.effects.flash('rgba(255,140,0,0.25)')
       this.effects.shockwave({ col, row })
     } else {
-      soundManager.play('rainbow', 1.0, 1.0)
+      soundManager.play('rainbow', 1.0, 1.5)
       hapticManager.trigger('rainbow')
       const targetEls = targets
         .map((p: Position) => this.boardRenderer.getBlock(p.col, p.row)?.el)
@@ -456,7 +456,7 @@ export class GameScreen {
       }, 1000)
     } else if (this.gameState.getRemainingMoves() <= 0) {
       this.gameState.endLevel()
-      soundManager.play('fail', 1.0, 1.5)
+      soundManager.play('fail', 1.0, 2.0)
       hapticManager.trigger('fail')
       setTimeout(() => {
         const goalsList = Array.from(this.gameState.getGoals().entries()).map(
@@ -558,7 +558,7 @@ export class GameScreen {
       }, 1000)
     } else if (this.gameState.getRemainingMoves() <= 0) {
       this.gameState.endLevel()
-      soundManager.play('fail', 1.0, 1.5)
+      soundManager.play('fail', 1.0, 2.0)
       hapticManager.trigger('fail')
       eventBus.emit('game:level-failed')
       setTimeout(() => {

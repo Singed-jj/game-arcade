@@ -15,10 +15,12 @@ export class SoundManager {
   async preload(): Promise<void> {
     try {
       this.ctx = new AudioContext()
-      const fileNames: SoundName[] = ['block-pop', 'swap', 'rocket', 'rainbow', 'clear', 'fail', 'star']
+      const fileNames: SoundName[] = ['block-pop', 'swap', 'rocket', 'bomb', 'rainbow', 'clear', 'fail', 'star']
       await Promise.allSettled(fileNames.map(name => this.loadSound(name)))
-      // bomb은 파일 다운로드 실패 → 합성음으로 생성
-      this.buffers.set('bomb', this.synthesizeBomb())
+      // bomb 파일 로드 실패 시 합성음 fallback
+      if (!this.buffers.has('bomb')) {
+        this.buffers.set('bomb', this.synthesizeBomb())
+      }
     } catch (e) {
       console.warn('SoundManager: preload failed', e)
     }
