@@ -47,7 +47,7 @@ export class MapScreen {
     // --- 헤더 (반투명 배경 패널) ---
     const headerPanel = document.createElement('div')
     headerPanel.className = 'bg-black/30 backdrop-blur-sm'
-    const hud = new HUD()
+    const hud = new HUD(heartManager)
     hud.updateHearts(heartManager.getHearts())
     hud.updatePieces(pieceManager.getPieces())
     headerPanel.appendChild(hud.el)
@@ -59,9 +59,10 @@ export class MapScreen {
 
     const nodeContainer = document.createElement('div')
     nodeContainer.className = 'relative w-full'
-    nodeContainer.style.minHeight = `${getMapHeight(save.unlockedLevel)}px`
+    const maxVisible = save.unlockedLevel + 3
+    nodeContainer.style.minHeight = `${getMapHeight(maxVisible)}px`
 
-    for (let level = 1; level <= save.unlockedLevel; level++) {
+    for (let level = 1; level <= maxVisible; level++) {
       const stars = save.levelStars[level] ?? 0
       const isUnlocked = level <= save.unlockedLevel
       const isCurrent = level === save.unlockedLevel
@@ -86,10 +87,12 @@ export class MapScreen {
           node.textContent = String(level)
         }
       } else {
+        // 잠금 레벨: 🔒 표시
         node.style.background = 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)'
         node.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3), 0 0 0 2px rgba(255,255,255,0.3)'
         node.style.color = 'rgba(255,255,255,0.5)'
-        node.textContent = String(level)
+        node.textContent = '🔒'
+        node.disabled = true
       }
 
       if (isUnlocked) {
@@ -106,21 +109,23 @@ export class MapScreen {
         })
       }
 
-      // 별 표시
+      // 별 표시 (잠금 레벨에는 별 미표시)
       const starRow = document.createElement('div')
       starRow.className = 'flex gap-0.5 mt-1 justify-center'
-      for (let i = 0; i < 3; i++) {
-        const s = document.createElement('span')
-        s.style.fontSize = '12px'
-        if (i < stars) {
-          s.textContent = '⭐'
-          s.style.filter = 'drop-shadow(0 1px 3px rgba(255,200,0,0.8))'
-        } else {
-          s.textContent = '☆'
-          s.style.color = 'rgba(255,255,255,0.55)'
-          s.style.fontSize = '11px'
+      if (isUnlocked) {
+        for (let i = 0; i < 3; i++) {
+          const s = document.createElement('span')
+          s.style.fontSize = '12px'
+          if (i < stars) {
+            s.textContent = '⭐'
+            s.style.filter = 'drop-shadow(0 1px 3px rgba(255,200,0,0.8))'
+          } else {
+            s.textContent = '☆'
+            s.style.color = 'rgba(255,255,255,0.55)'
+            s.style.fontSize = '11px'
+          }
+          starRow.appendChild(s)
         }
-        starRow.appendChild(s)
       }
 
       const wrap = document.createElement('div')
@@ -128,7 +133,30 @@ export class MapScreen {
       wrap.style.left = pos.left
       wrap.style.top = pos.top
       wrap.style.transform = 'translateX(-50%)'
-      wrap.appendChild(node)
+
+      // 현재 레벨: "플레이!" 태그 + 🐥 마스콧
+      if (isCurrent) {
+        const playTag = document.createElement('div')
+        playTag.textContent = '플레이!'
+        playTag.className = 'text-xs font-bold text-white px-2 py-0.5 rounded-full mb-1'
+        playTag.style.background = 'linear-gradient(135deg, #f97316, #ea580c)'
+        playTag.style.boxShadow = '0 2px 8px rgba(249,115,22,0.5)'
+        playTag.style.whiteSpace = 'nowrap'
+        wrap.appendChild(playTag)
+
+        const nodeRow = document.createElement('div')
+        nodeRow.className = 'flex items-center gap-1'
+        nodeRow.appendChild(node)
+        const mascot = document.createElement('span')
+        mascot.textContent = '🐥'
+        mascot.style.fontSize = '20px'
+        mascot.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
+        nodeRow.appendChild(mascot)
+        wrap.appendChild(nodeRow)
+      } else {
+        wrap.appendChild(node)
+      }
+
       wrap.appendChild(starRow)
       nodeContainer.appendChild(wrap)
     }
@@ -136,7 +164,7 @@ export class MapScreen {
     scrollArea.appendChild(nodeContainer)
 
     // --- 스크롤 힌트 (레벨 > 5일 때) ---
-    if (save.unlockedLevel > 5) {
+    if (maxVisible > 5) {
       const hint = document.createElement('p')
       hint.textContent = '↕ 스크롤하여 레벨 탐색'
       hint.className = 'text-white/40 text-xs text-center mt-6 mb-2'
@@ -144,6 +172,16 @@ export class MapScreen {
     }
 
     container.appendChild(scrollArea)
+
+    // --- 아이템 버튼 (오른쪽 하단 고정) ---
+    const itemBtn = document.createElement('button')
+    itemBtn.innerHTML = '🎒<span class="text-xs block">아이템</span>'
+    itemBtn.className = 'absolute bottom-20 right-3 w-14 h-14 rounded-full bg-purple-600 text-white flex flex-col items-center justify-center font-bold shadow-lg active:scale-90 transition-transform z-10'
+    itemBtn.style.boxShadow = '0 4px 16px rgba(147,51,234,0.5)'
+    itemBtn.addEventListener('click', () => {
+      eventBus.emit('screen:change', { screen: 'inventory' })
+    })
+    container.appendChild(itemBtn)
 
     if (pieceManager.canGacha()) {
       const gachaBtn = document.createElement('button')

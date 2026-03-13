@@ -11,6 +11,9 @@ import { GameScreen } from '@/screens/game-screen'
 import { ClearScreen } from '@/screens/clear-screen'
 import { FailScreen } from '@/screens/fail-screen'
 import { GachaScreen } from '@/screens/gacha-screen'
+import { InventoryScreen } from '@/screens/inventory-screen'
+import { TickerBanner } from '@/ui/ticker-banner'
+import { soundManager } from '@/audio/sound-manager'
 
 class App {
   private app: HTMLElement
@@ -20,6 +23,7 @@ class App {
   private toolManager: ToolManager
   private save: SaveData
   private currentScreen: string = ''
+  private ticker: TickerBanner
 
   constructor() {
     this.app = document.getElementById('app')!
@@ -27,6 +31,8 @@ class App {
     this.heartManager = new HeartManager()
     this.pieceManager = new PieceManager()
     this.toolManager = new ToolManager()
+    this.ticker = new TickerBanner()
+    this.pieceManager.setToolManager(this.toolManager)
     this.save = loadSave()
 
     // 상태 복원
@@ -34,7 +40,9 @@ class App {
     this.pieceManager.loadState(this.save.pieces)
     this.toolManager.loadState(this.save.tools)
 
+    soundManager.preload()
     this.setupEventListeners()
+    this.ticker.mount()
     this.changeScreen('cover')
   }
 
@@ -80,6 +88,9 @@ class App {
         break
       case 'gacha':
         new GachaScreen(this.app, this.pieceManager, this.toolManager)
+        break
+      case 'inventory':
+        new InventoryScreen(this.app, this.toolManager)
         break
     }
   }

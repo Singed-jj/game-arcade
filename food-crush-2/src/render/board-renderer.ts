@@ -1,6 +1,7 @@
 import { BOARD_COLS, BOARD_ROWS, CELL_SIZE, type BoardGrid, type BlockType, type Position, EMPTY } from '@/core/types'
 import { eventBus } from '@/state/event-bus'
 import { BlockView } from './block-view'
+import { soundManager } from '@/audio/sound-manager'
 
 export class BoardRenderer {
   private container: HTMLElement
@@ -117,6 +118,8 @@ export class BoardRenderer {
     const a = this.blocks.get(this.key(from.col, from.row))
     const b = this.blocks.get(this.key(to.col, to.row))
     if (!a || !b) return
+
+    soundManager.play('swap')
 
     this.blocks.set(this.key(from.col, from.row), b)
     this.blocks.set(this.key(to.col, to.row), a)

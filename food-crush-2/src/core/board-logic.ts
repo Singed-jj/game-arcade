@@ -48,6 +48,10 @@ export class BoardLogic {
     return this.board
   }
 
+  setBoard(grid: BoardGrid): void {
+    this.board = grid.map(col => [...col])
+  }
+
   getBlock(col: number, row: number): BlockType | -1 {
     if (col < 0 || col >= BOARD_COLS || row < 0 || row >= BOARD_ROWS) return EMPTY
     return this.board[col][row]

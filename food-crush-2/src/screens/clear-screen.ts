@@ -1,12 +1,13 @@
+import { PIECES_FOR_GACHA } from '@/core/types'
 import { eventBus } from '@/state/event-bus'
 import type { PieceManager } from '@/state/piece-manager'
+import { soundManager } from '@/audio/sound-manager'
 
 export class ClearScreen {
   constructor(container: HTMLElement, pieceManager: PieceManager, data?: Record<string, unknown>) {
     const stars = (data?.stars as number) ?? 1
     const level = (data?.level as number) ?? 1
     const movesLeft = (data?.movesLeft as number) ?? 0
-    const score = (data?.score as number) ?? 0
 
     container.className = 'relative w-full h-dvh max-w-[375px] mx-auto flex flex-col items-center justify-center overflow-hidden'
     container.style.backgroundImage = 'url(/assets/bg/game-bg.png)'
@@ -53,6 +54,11 @@ export class ClearScreen {
       if (i < stars) {
         span.classList.add('animate-star-drop')
         span.style.filter = 'drop-shadow(0 0 8px rgba(255,200,0,0.8))'
+        // 별 표시 타이밍에 맞춰 사운드 재생 (pitch 상승)
+        const starIndex = i
+        setTimeout(() => {
+          soundManager.play('star', 1.0 + starIndex * 0.15)
+        }, (0.2 + i * 0.15) * 1000)
       } else {
         span.style.opacity = '0.25'
         span.style.filter = 'grayscale(1)'
@@ -87,22 +93,86 @@ export class ClearScreen {
       return item
     }
 
-    const bonusScore = movesLeft * 50
-    statsRow.appendChild(makeStat('✨', score.toLocaleString(), '점수'))
-    if (movesLeft > 0) statsRow.appendChild(makeStat('🔥', `+${bonusScore.toLocaleString()}`, '보너스'))
-    statsRow.appendChild(makeStat('🧩', `${pieceManager.getPieces()}/5`, '조각'))
+    if (movesLeft > 0) statsRow.appendChild(makeStat('🔥', `+${movesLeft}`, '남은 이동'))
     card.appendChild(statsRow)
 
-    // 다음 레벨 버튼
-    const nextBtn = document.createElement('button')
-    nextBtn.textContent = '다음 레벨 ▶'
-    nextBtn.className = 'w-full py-4 font-bold rounded-2xl text-lg text-white transition-transform active:scale-95 mb-3'
-    nextBtn.style.background = 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)'
-    nextBtn.style.boxShadow = '0 4px 20px rgba(245,158,11,0.4)'
-    nextBtn.addEventListener('click', () => {
-      eventBus.emit('screen:change', { screen: 'game', data: { level: level + 1 } })
-    })
-    card.appendChild(nextBtn)
+    // 조각 박스
+    const currentPieces = pieceManager.getPieces()
+    const isGachaReady = currentPieces >= PIECES_FOR_GACHA
+
+    const pieceBox = document.createElement('div')
+    pieceBox.className = 'w-full rounded-2xl px-4 py-4 mb-5 flex flex-col items-center gap-2'
+    pieceBox.style.background = 'rgba(255,255,255,0.08)'
+    pieceBox.style.border = '1px solid rgba(255,255,255,0.1)'
+
+    const pieceHeader = document.createElement('div')
+    pieceHeader.textContent = '\uD83C\uDF9F\uFE0F +1 조각 획득!'
+    pieceHeader.className = 'text-white font-bold text-sm'
+    pieceBox.appendChild(pieceHeader)
+
+    // 도트 표시
+    const dotRow = document.createElement('div')
+    dotRow.className = 'flex gap-2'
+    for (let i = 0; i < PIECES_FOR_GACHA; i++) {
+      const dot = document.createElement('div')
+      dot.className = 'w-4 h-4 rounded-full'
+      if (i < currentPieces) {
+        dot.style.background = 'linear-gradient(135deg, #fbbf24, #f59e0b)'
+        dot.style.boxShadow = '0 0 6px rgba(251,191,36,0.6)'
+      } else {
+        dot.style.background = 'rgba(255,255,255,0.15)'
+      }
+      dotRow.appendChild(dot)
+    }
+    pieceBox.appendChild(dotRow)
+
+    const pieceStatus = document.createElement('div')
+    pieceStatus.className = 'text-white/70 text-xs'
+    if (isGachaReady) {
+      pieceStatus.textContent = `\u2728 ${currentPieces}/${PIECES_FOR_GACHA} \u2014 뽑기 준비 완료!`
+      pieceStatus.className = 'text-yellow-300 text-xs font-bold'
+    } else {
+      pieceStatus.textContent = `${currentPieces}/${PIECES_FOR_GACHA} \u2014 1개만 더!`
+    }
+    pieceBox.appendChild(pieceStatus)
+
+    card.appendChild(pieceBox)
+
+    // 버튼 영역
+    if (isGachaReady) {
+      // 뽑기 준비 완료: 금색 뽑기 버튼 + 유령 다음 레벨 버튼
+      const gachaBtn = document.createElement('button')
+      gachaBtn.textContent = '\u2728 공짜 쿠폰 뽑기!'
+      gachaBtn.className = 'w-full py-4 font-bold rounded-2xl text-lg text-white transition-transform active:scale-95 mb-3'
+      gachaBtn.style.background = 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'
+      gachaBtn.style.boxShadow = '0 4px 20px rgba(251,191,36,0.5), 0 0 30px rgba(251,191,36,0.2)'
+      gachaBtn.style.color = '#1a0a3e'
+      gachaBtn.addEventListener('click', () => {
+        eventBus.emit('screen:change', { screen: 'gacha' })
+      })
+      card.appendChild(gachaBtn)
+
+      const nextGhostBtn = document.createElement('button')
+      nextGhostBtn.textContent = '다음 레벨 먼저 \u25B6'
+      nextGhostBtn.className = 'w-full py-3 rounded-2xl text-sm text-white/70 transition-transform active:scale-95 mb-3'
+      nextGhostBtn.style.border = '1px solid rgba(255,255,255,0.2)'
+      nextGhostBtn.style.background = 'transparent'
+      nextGhostBtn.addEventListener('click', () => {
+        eventBus.emit('screen:change', { screen: 'game', data: { level: level + 1 } })
+      })
+      card.appendChild(nextGhostBtn)
+    } else {
+      // 조각 미완성: 기존 다음 레벨 버튼
+      const nextBtn = document.createElement('button')
+      nextBtn.textContent = '다음 레벨 \u25B6'
+      nextBtn.className = 'w-full py-4 font-bold rounded-2xl text-lg text-white transition-transform active:scale-95 mb-3'
+      nextBtn.style.background = 'linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)'
+      nextBtn.style.boxShadow = '0 4px 20px rgba(245,158,11,0.4)'
+      nextBtn.addEventListener('click', () => {
+        eventBus.emit('screen:change', { screen: 'game', data: { level: level + 1 } })
+      })
+      card.appendChild(nextBtn)
+    }
 
     const mapBtn = document.createElement('button')
     mapBtn.textContent = '맵으로'

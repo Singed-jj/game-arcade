@@ -1,6 +1,6 @@
 // src/screens/game-screen.ts
 import { BoardLogic, type CascadeStep } from '@/core/board-logic'
-import { type Position, type BlockType, ToolType, CASCADE_CONFIG, PIECES_ON_CLEAR, BLOCK_EMOJIS, BLOCK_GRADIENTS } from '@/core/types'
+import { type Position, type BlockType, type BoardGrid, ToolType, CASCADE_CONFIG, PIECES_ON_CLEAR, BLOCK_EMOJIS, BLOCK_GRADIENTS } from '@/core/types'
 import { getLevelConfig } from '@/core/level-data'
 import { getRocketTargets, getBombTargets, getRainbowTargets } from '@/core/tool-effects'
 import { eventBus } from '@/state/event-bus'
@@ -13,6 +13,16 @@ import { ScreenShake } from '@/render/screen-shake'
 import { HUD } from '@/ui/hud'
 import { GameInfoBar } from '@/ui/game-info-bar'
 import { ToolBar } from '@/ui/tool-bar'
+import { soundManager } from '@/audio/sound-manager'
+
+const PAUSE_STATE_KEY = 'fc2-pause-state'
+
+interface PauseState {
+  level: number
+  grid: (string | null)[][]
+  movesLeft: number
+  goalProgress: Record<string, number>
+}
 
 export class GameScreen {
   private boardLogic!: BoardLogic
@@ -23,6 +33,7 @@ export class GameScreen {
   private infoBar!: GameInfoBar
   private toolBar!: ToolBar
   private hintTimer: ReturnType<typeof setTimeout> | null = null
+  private urgentOverlay: HTMLElement | null = null
 
   constructor(
     private container: HTMLElement,
@@ -43,15 +54,32 @@ export class GameScreen {
     this.boardLogic = new BoardLogic()
     this.boardLogic.initBoard()
 
+    // 일시정지 상태 복구
+    this.restorePauseState(level)
+
     this.container.className = 'relative w-full h-dvh max-w-[375px] mx-auto overflow-hidden flex flex-col'
     this.container.style.backgroundImage = 'url(/assets/bg/game-bg.png)'
     this.container.style.backgroundSize = 'cover'
     this.addSparkleOverlay()
 
-    this.hud = new HUD()
+    this.hud = new HUD(heartManager)
     this.hud.updateHearts(heartManager.getHearts())
     this.hud.setOnBack(() => this.showExitConfirm())
     this.container.appendChild(this.hud.el)
+
+    // 일시정지 버튼을 HUD에 삽입 (뒤로가기 버튼 옆)
+    const pauseBtn = document.createElement('button')
+    pauseBtn.textContent = '⏸'
+    pauseBtn.className = 'text-white/90 text-lg font-bold w-8 h-8 flex items-center justify-center active:scale-90 transition-transform rounded-full'
+    pauseBtn.style.background = 'rgba(255,255,255,0.12)'
+    pauseBtn.addEventListener('click', () => this.showPauseOverlay())
+    // 뒤로가기 버튼(첫 번째 자식) 다음에 삽입
+    const firstChild = this.hud.el.children[0]
+    if (firstChild && firstChild.nextSibling) {
+      this.hud.el.insertBefore(pauseBtn, firstChild.nextSibling)
+    } else {
+      this.hud.el.appendChild(pauseBtn)
+    }
 
     this.infoBar = new GameInfoBar()
     this.infoBar.setLevel(config.moves, gameState.getGoals())
@@ -222,7 +250,33 @@ export class GameScreen {
       const tool = this.toolBar.getSelectedTool()
       this.boardRenderer.setToolMode(tool !== null)
     })
+    eventBus.on('game:urgent-mode', ({ urgent }) => this.setUrgentOverlay(urgent))
     this.startHintTimer()
+  }
+
+  private setUrgentOverlay(urgent: boolean): void {
+    if (urgent && !this.urgentOverlay) {
+      const overlay = document.createElement('div')
+      overlay.className = 'absolute inset-0 pointer-events-none'
+      overlay.style.cssText = 'background: rgba(180,0,0,0.12); z-index: 1; animation: urgent-pulse 1s ease-in-out infinite;'
+      this.urgentOverlay = overlay
+      this.container.appendChild(overlay)
+
+      if (!document.getElementById('urgent-styles')) {
+        const style = document.createElement('style')
+        style.id = 'urgent-styles'
+        style.textContent = `
+          @keyframes urgent-pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+          }
+        `
+        document.head.appendChild(style)
+      }
+    } else if (!urgent && this.urgentOverlay) {
+      this.urgentOverlay.remove()
+      this.urgentOverlay = null
+    }
   }
 
   private async handleCellTap(col: number, row: number): Promise<void> {
@@ -259,13 +313,16 @@ export class GameScreen {
       targets = getRainbowTargets(this.boardLogic.getBoard(), blockType as import('@/core/types').BlockType)
     }
 
-    // Visual effect for tool use
+    // Visual effect + sound for tool use
     if (tool === ToolType.ROCKET) {
+      soundManager.play('rocket')
       this.shake.shake(3)
     } else if (tool === ToolType.BOMB) {
+      soundManager.play('bomb')
       this.shake.shake(5)
       this.effects.flash('rgba(255,140,0,0.25)')
     } else {
+      soundManager.play('rainbow')
       this.effects.flash('rgba(180,0,255,0.2)')
     }
 
@@ -302,6 +359,7 @@ export class GameScreen {
     if (this.gameState.areAllGoalsMet()) {
       const stars = this.gameState.calculateStars()
       this.gameState.endLevel()
+      soundManager.play('clear')
       setTimeout(() => {
         eventBus.emit('screen:change', {
           screen: 'clear',
@@ -310,6 +368,7 @@ export class GameScreen {
       }, 1000)
     } else if (this.gameState.getRemainingMoves() <= 0) {
       this.gameState.endLevel()
+      soundManager.play('fail')
       setTimeout(() => {
         const goalsList = Array.from(this.gameState.getGoals().entries()).map(
           ([k, v]) => ({ blockType: k as number, current: v.current, target: v.target })
@@ -396,6 +455,7 @@ export class GameScreen {
     if (this.gameState.areAllGoalsMet()) {
       const stars = this.gameState.calculateStars()
       this.gameState.endLevel()
+      soundManager.play('clear')
       eventBus.emit('game:level-complete', { stars, movesLeft: this.gameState.getRemainingMoves() })
       setTimeout(() => {
         eventBus.emit('screen:change', {
@@ -405,6 +465,7 @@ export class GameScreen {
       }, 1000)
     } else if (this.gameState.getRemainingMoves() <= 0) {
       this.gameState.endLevel()
+      soundManager.play('fail')
       eventBus.emit('game:level-failed')
       setTimeout(() => {
         const goalsList = Array.from(this.gameState.getGoals().entries()).map(
@@ -419,6 +480,107 @@ export class GameScreen {
       this.boardRenderer.unlockInput()
       this.startHintTimer()
     }
+  }
+
+  private savePauseState(): void {
+    const grid = this.boardLogic.getBoard()
+    const serializedGrid: (string | null)[][] = grid.map(col =>
+      col.map(cell => (cell === -1 ? null : String(cell)))
+    )
+    const goals = this.gameState.getGoals()
+    const goalProgress: Record<string, number> = {}
+    for (const [type, goal] of goals) {
+      goalProgress[String(type)] = goal.current
+    }
+    const state: PauseState = {
+      level: this.gameState.getLevel(),
+      grid: serializedGrid,
+      movesLeft: this.gameState.getRemainingMoves(),
+      goalProgress,
+    }
+    localStorage.setItem(PAUSE_STATE_KEY, JSON.stringify(state))
+  }
+
+  private clearPauseState(): void {
+    localStorage.removeItem(PAUSE_STATE_KEY)
+  }
+
+  private restorePauseState(currentLevel: number): void {
+    const raw = localStorage.getItem(PAUSE_STATE_KEY)
+    if (!raw) return
+    try {
+      const state: PauseState = JSON.parse(raw)
+      if (state.level !== currentLevel) {
+        this.clearPauseState()
+        return
+      }
+      // grid 복구
+      const restoredGrid: BoardGrid = state.grid.map(col =>
+        col.map(cell => (cell === null ? -1 : Number(cell)))
+      ) as BoardGrid
+      this.boardLogic.setBoard(restoredGrid)
+
+      // movesLeft 복구
+      this.gameState.setRemainingMoves(state.movesLeft)
+
+      // goalProgress 복구
+      for (const [typeStr, current] of Object.entries(state.goalProgress)) {
+        this.gameState.setGoalProgress(Number(typeStr) as BlockType, current as number)
+      }
+    } catch {
+      this.clearPauseState()
+    }
+  }
+
+  private showPauseOverlay(): void {
+    this.boardRenderer.lockInput()
+    this.stopHint()
+    this.savePauseState()
+
+    const overlay = document.createElement('div')
+    overlay.className = 'absolute inset-0 z-50 flex flex-col items-center justify-center'
+    overlay.style.cssText = 'background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);'
+
+    const box = document.createElement('div')
+    box.className = 'bg-[#1a0a3e] rounded-3xl p-8 flex flex-col items-center gap-4 mx-6'
+    box.style.boxShadow = '0 0 40px rgba(124,58,237,0.3)'
+
+    const title = document.createElement('div')
+    title.className = 'text-white font-bold text-xl text-center'
+    title.textContent = '\u23F8 일시정지'
+    box.appendChild(title)
+
+    const info = document.createElement('div')
+    info.className = 'text-white/60 text-sm text-center'
+    info.textContent = `레벨 ${this.gameState.getLevel()} \xB7 남은 이동: ${this.gameState.getRemainingMoves()}회`
+    box.appendChild(info)
+
+    const btnRow = document.createElement('div')
+    btnRow.className = 'flex gap-3 mt-2'
+
+    const resumeBtn = document.createElement('button')
+    resumeBtn.textContent = '\u25B6 이어하기'
+    resumeBtn.className = 'px-6 py-3 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-full font-bold active:scale-95 transition-transform'
+    resumeBtn.addEventListener('click', () => {
+      overlay.remove()
+      this.clearPauseState()
+      this.boardRenderer.unlockInput()
+      this.startHintTimer()
+    })
+
+    const mapBtn = document.createElement('button')
+    mapBtn.textContent = '\u2190 맵으로'
+    mapBtn.className = 'px-6 py-3 bg-white/15 text-white rounded-full font-bold active:scale-95 transition-transform'
+    mapBtn.addEventListener('click', () => {
+      overlay.remove()
+      eventBus.emit('screen:change', { screen: 'map' })
+    })
+
+    btnRow.appendChild(resumeBtn)
+    btnRow.appendChild(mapBtn)
+    box.appendChild(btnRow)
+    overlay.appendChild(box)
+    this.container.appendChild(overlay)
   }
 
   private addSparkleOverlay(): void {
@@ -469,8 +631,9 @@ export class GameScreen {
   private async animateCascadeStep(step: CascadeStep, cascadeIndex: number): Promise<void> {
     let totalMatched = 0
 
-    // 1) 매칭된 블록 pop 애니메이션 + 파티클
+    // 1) 매칭된 블록 pop 애니메이션 + 파티클 + 사운드
     const popPromises: Promise<void>[] = []
+    soundManager.play('block-pop', 1.0 + cascadeIndex * 0.1)
     for (const match of step.matches) {
       for (const cell of match.cells) {
         this.effects.spawnBlockPop(cell, match.blockType)

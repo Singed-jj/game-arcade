@@ -1,13 +1,21 @@
 import { MAX_HEARTS, PIECES_FOR_GACHA } from '@/core/types'
 import { eventBus } from '@/state/event-bus'
+import type { HeartManager } from '@/state/heart-manager'
 
 export class HUD {
   readonly el: HTMLElement
   private heartEls: HTMLElement[] = []
   private pieceDotsEl: HTMLElement
+  private pieceCountEl: HTMLElement
+  private recoveryTimerEl: HTMLElement
+  private recoveryInterval: ReturnType<typeof setInterval> | null = null
+  private heartManager: HeartManager | null = null
+  private currentHeartCount = MAX_HEARTS
   setOnBack!: (fn: (() => void) | null) => void
 
-  constructor() {
+  constructor(heartManager?: HeartManager) {
+    this.heartManager = heartManager ?? null
+
     this.el = document.createElement('div')
     this.el.className = 'flex items-center justify-between px-3 py-2'
     this.el.style.background = 'linear-gradient(180deg, rgba(0,0,0,0.45) 0%, transparent 100%)'
@@ -35,6 +43,10 @@ export class HUD {
     const rightGroup = document.createElement('div')
     rightGroup.className = 'flex items-center gap-2'
 
+    // 하트 영역 (하트 + 회복 타이머)
+    const heartArea = document.createElement('div')
+    heartArea.className = 'flex flex-col items-center'
+
     // 하트 박스
     const heartBox = document.createElement('div')
     heartBox.className = 'flex gap-0.5 items-center'
@@ -46,31 +58,61 @@ export class HUD {
       this.heartEls.push(span)
       heartBox.appendChild(span)
     }
-    rightGroup.appendChild(heartBox)
+    heartArea.appendChild(heartBox)
+
+    // 회복 타이머 텍스트
+    this.recoveryTimerEl = document.createElement('span')
+    this.recoveryTimerEl.className = 'text-xs text-white/60'
+    this.recoveryTimerEl.style.display = 'none'
+    heartArea.appendChild(this.recoveryTimerEl)
+
+    rightGroup.appendChild(heartArea)
 
     // 구분선
     const sep = document.createElement('div')
     sep.className = 'w-px h-4 bg-white/20'
     rightGroup.appendChild(sep)
 
+    // 조각 영역 (도트 + 카운터)
+    const pieceArea = document.createElement('div')
+    pieceArea.className = 'flex flex-col items-center'
+
     // 조각 도트 (별 아이콘)
     this.pieceDotsEl = document.createElement('div')
     this.pieceDotsEl.className = 'flex gap-0.5 items-center'
-    rightGroup.appendChild(this.pieceDotsEl)
+    pieceArea.appendChild(this.pieceDotsEl)
+
+    // 조각 숫자 카운터
+    this.pieceCountEl = document.createElement('span')
+    this.pieceCountEl.className = 'text-xs text-white/70'
+    this.pieceCountEl.textContent = `0/${PIECES_FOR_GACHA}`
+    pieceArea.appendChild(this.pieceCountEl)
+
+    rightGroup.appendChild(pieceArea)
 
     this.el.appendChild(rightGroup)
 
     eventBus.on('heart:changed', ({ current }) => this.updateHearts(current))
     eventBus.on('piece:changed', ({ current }) => this.updatePieces(current))
+
+    // 화면 전환 시 인터벌 정리
+    eventBus.on('screen:change', () => this.stopRecoveryTimer())
   }
 
   updateHearts(count: number): void {
+    this.currentHeartCount = count
     this.heartEls.forEach((el, i) => {
       const filled = i < count
       el.textContent = filled ? '❤️' : '🤍'
       el.style.opacity = filled ? '1' : '0.5'
       el.style.transform = filled ? 'scale(1)' : 'scale(0.85)'
     })
+    // 하트 3개 미만이면 회복 타이머 시작
+    if (count < MAX_HEARTS && this.heartManager) {
+      this.startRecoveryTimer()
+    } else {
+      this.stopRecoveryTimer()
+    }
   }
 
   updatePieces(count: number): void {
@@ -89,5 +131,37 @@ export class HUD {
       }
       this.pieceDotsEl.appendChild(dot)
     }
+    // 숫자 카운터 업데이트
+    this.pieceCountEl.textContent = `${count}/${PIECES_FOR_GACHA}`
+  }
+
+  private startRecoveryTimer(): void {
+    if (this.recoveryInterval) return
+    this.recoveryTimerEl.style.display = ''
+    this.updateRecoveryDisplay()
+    this.recoveryInterval = setInterval(() => this.updateRecoveryDisplay(), 1000)
+  }
+
+  private stopRecoveryTimer(): void {
+    if (this.recoveryInterval) {
+      clearInterval(this.recoveryInterval)
+      this.recoveryInterval = null
+    }
+    this.recoveryTimerEl.style.display = 'none'
+  }
+
+  private updateRecoveryDisplay(): void {
+    if (!this.heartManager) return
+    const ms = this.heartManager.getRecoveryTimeMs()
+    if (ms <= 0) {
+      this.stopRecoveryTimer()
+      return
+    }
+    const totalSec = Math.ceil(ms / 1000)
+    const min = Math.floor(totalSec / 60)
+    const sec = totalSec % 60
+    const mm = String(min).padStart(2, '0')
+    const ss = String(sec).padStart(2, '0')
+    this.recoveryTimerEl.textContent = `\u{1F550} ${mm}:${ss}`
   }
 }

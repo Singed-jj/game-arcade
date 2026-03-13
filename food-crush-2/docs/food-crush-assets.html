@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>푸드크러시 — 에셋 & 이펙트 제작 가이드</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: #0F0A1E;
+  color: #E0E0E0;
+  line-height: 1.7;
+  padding: 40px 20px;
+}
+.wrap { max-width: 900px; margin: 0 auto; }
+h1 { font-size: 26px; font-weight: 900; color: #FF9A3C; margin-bottom: 4px; }
+.subtitle { color: rgba(255,255,255,0.4); font-size: 13px; margin-bottom: 36px; }
+h2 {
+  font-size: 17px; font-weight: 900; color: #FFD600;
+  margin: 44px 0 14px; padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+h3 { font-size: 14px; font-weight: 700; color: #FF9A3C; margin: 24px 0 8px; }
+h4 { font-size: 13px; font-weight: 700; color: #42A5F5; margin: 16px 0 6px; }
+p { font-size: 13px; color: rgba(255,255,255,0.65); margin-bottom: 10px; }
+strong { color: white; }
+em { color: #FFD600; font-style: normal; font-weight: 700; }
+ul { font-size: 13px; color: rgba(255,255,255,0.6); padding-left: 20px; margin-bottom: 10px; }
+li { margin-bottom: 4px; }
+
+.card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px; padding: 18px 22px;
+  margin-bottom: 14px;
+}
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0; }
+th {
+  font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.35);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 7px 10px; text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+td {
+  padding: 9px 10px; color: rgba(255,255,255,0.65);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  vertical-align: top;
+}
+td:first-child { font-weight: 700; color: white; white-space: nowrap; }
+
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 6px;
+  font-size: 11px; font-weight: 700;
+}
+.badge-ai { background: rgba(76,175,80,0.2); color: #4CAF50; }
+.badge-code { background: rgba(156,39,176,0.2); color: #CE93D8; }
+.badge-free { background: rgba(33,150,243,0.2); color: #42A5F5; }
+
+.prompt-box {
+  background: rgba(0,0,0,0.4); padding: 16px; border-radius: 10px;
+  font-size: 12px; color: #A5D6A7; margin: 10px 0;
+  white-space: pre-wrap; line-height: 1.6;
+  border: 1px solid rgba(76,175,80,0.2);
+}
+.prompt-box .label {
+  color: #4CAF50; font-weight: 700; font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin-bottom: 6px; display: block;
+}
+
+.code-box {
+  background: rgba(0,0,0,0.4); padding: 16px; border-radius: 10px;
+  font-size: 12px; color: #CE93D8; margin: 10px 0;
+  white-space: pre-wrap; line-height: 1.5;
+  border: 1px solid rgba(156,39,176,0.2);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+.code-box .label {
+  color: #CE93D8; font-weight: 700; font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin-bottom: 6px; display: block;
+}
+
+.note {
+  background: rgba(255,214,0,0.06); border-left: 3px solid #FFD600;
+  padding: 12px 16px; border-radius: 0 10px 10px 0;
+  font-size: 12px; color: rgba(255,255,255,0.55); margin: 16px 0;
+}
+
+.divider {
+  border: none; border-top: 1px solid rgba(255,255,255,0.06);
+  margin: 20px 0;
+}
+
+.checklist { list-style: none; padding-left: 0; }
+.checklist li { padding: 4px 0; }
+.checklist li::before { content: '☐ '; color: #FF9A3C; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>푸드크러시 에셋 & 이펙트 제작 가이드</h1>
+<div class="subtitle">AI 이미지 프롬프트 + 개발자 이펙트 구현 스펙 · 2026-03-12</div>
+
+<p>이 문서는 두 파트로 나뉜다:<br>
+<span class="badge badge-ai">AI 생성</span> = AI에 프롬프트를 넣어서 이미지를 만드는 파트<br>
+<span class="badge badge-code">코드</span> = 개발자가 프로그래밍으로 구현하는 파트 (이펙트, 애니메이션)</p>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PART A: AI 생성 이미지 에셋 -->
+<!-- ═══════════════════════════════════════════ -->
+
+<h2>Part A. AI로 만드는 이미지 에셋</h2>
+
+<p>필요한 이미지는 총 <em>약 20장</em>. 전부 AI 이미지 생성으로 만든다.<br>
+추천 도구: <strong>ChatGPT (GPT-4o 이미지)</strong> — 투명 배경 PNG를 바로 다운로드할 수 있어서 가장 편함.<br>
+대안: Midjourney (품질 높지만 투명 배경 불가 → 배경 제거 필요), DALL-E 3</p>
+
+<!-- A-1 블록 -->
+<h3>A-1. 블록 5종 (가장 중요)</h3>
+
+<p>유저가 게임 내내 보는 것. <em>5종의 스타일이 통일</em>되어야 한다.</p>
+
+<table>
+<thead><tr><th>#</th><th>블록</th><th>색감 방향</th><th>사이즈</th><th>포맷</th></tr></thead>
+<tbody>
+  <tr><td>1</td><td>치킨 (드럼스틱)</td><td>따뜻한 금색 + 갈색</td><td>128×128px</td><td>PNG 투명배경</td></tr>
+  <tr><td>2</td><td>콜라 (컵+빨대)</td><td>빨간색 + 갈색</td><td>128×128px</td><td>PNG 투명배경</td></tr>
+  <tr><td>3</td><td>감자튀김 (빨간 봉투)</td><td>빨간색 + 노란색</td><td>128×128px</td><td>PNG 투명배경</td></tr>
+  <tr><td>4</td><td>버거</td><td>갈색 + 초록(양상추) + 노란(치즈)</td><td>128×128px</td><td>PNG 투명배경</td></tr>
+  <tr><td>5</td><td>피자 (한 조각)</td><td>노란 치즈 + 빨간 토마토</td><td>128×128px</td><td>PNG 투명배경</td></tr>
+</tbody>
+</table>
+
+<div class="prompt-box"><span class="label">프롬프트 — 블록 5종 한 번에 (스타일 통일용)</span>
+Create a set of 5 cute food icons for a mobile match-3 puzzle game.
+
+The 5 items: fried chicken drumstick, cola cup with straw, french fries in red container, hamburger, pizza slice.
+
+Style requirements:
+- 3D clay/plasticine render style (like Nintendo or Candy Crush)
+- Rounded, puffy, slightly exaggerated proportions
+- Soft ambient shadows underneath each item
+- Bright and saturated colors, cheerful mood
+- Each icon is separate, on a transparent background
+- Each icon should be roughly the same visual size/weight
+- No text, no extra decoration, just the food item
+- Clean edges, suitable for use as a game tile at 128x128 pixels
+
+Output as a single image with all 5 items arranged in a row with spacing between them.</div>
+
+<div class="note">
+  <strong>생성 후 작업:</strong><br>
+  1. 결과물에서 5개를 각각 크롭해서 별도 PNG로 저장<br>
+  2. 각 128×128px로 리사이즈 (Figma, Preview, 또는 온라인 도구)<br>
+  3. 배경이 완전 투명한지 확인. 반투명 잔여물 있으면 remove.bg로 정리<br>
+  4. 마음에 안 들면 같은 프롬프트로 3~5회 재생성해서 가장 좋은 세트 선택<br>
+  5. 스타일이 마음에 드는데 1종만 아쉬우면 개별 재생성:
+</div>
+
+<div class="prompt-box"><span class="label">프롬프트 — 개별 블록 재생성 (예: 치킨만 다시)</span>
+A cute fried chicken drumstick icon for a mobile match-3 puzzle game.
+3D clay/plasticine render style, rounded puffy shape, soft shadow underneath,
+bright golden-brown color, cheerful mood, transparent background,
+128x128 pixel game tile asset. No text, clean edges.
+
+Match this exact art style: [여기에 이미 만든 다른 블록 이미지를 첨부]</div>
+
+<hr class="divider">
+
+<!-- A-2 도구 아이콘 -->
+<h3>A-2. 도구 아이콘 3종</h3>
+
+<p>게임 하단 도구 슬롯에 들어가는 아이콘. 블록과 같은 스타일이되, 좀 더 반짝이고 특별한 느낌.</p>
+
+<table>
+<thead><tr><th>#</th><th>도구</th><th>모양</th><th>색감</th></tr></thead>
+<tbody>
+  <tr><td>1</td><td>로켓</td><td>위를 향한 작은 로켓</td><td>주황~빨강 그라데이션, 불꽃 트레일</td></tr>
+  <tr><td>2</td><td>폭탄</td><td>둥근 폭탄 + 심지 불꽃</td><td>검정 몸체, 노란 불꽃</td></tr>
+  <tr><td>3</td><td>무지개</td><td>무지개색 구슬 or 별</td><td>무지개 그라데이션, 반짝이</td></tr>
+</tbody>
+</table>
+
+<div class="prompt-box"><span class="label">프롬프트 — 도구 아이콘 3종</span>
+Create 3 power-up icons for a mobile match-3 puzzle game.
+
+1. Rocket: a cute small rocket pointing up, orange-red gradient body, small flame trail at the bottom
+2. Bomb: a round cartoon bomb with a lit fuse, black body with a spark on top
+3. Rainbow Star: a magical rainbow-colored star or orb, glowing with sparkle effects
+
+Style requirements:
+- Same 3D clay/plasticine render style as the game blocks
+- Slightly more "special" feeling than regular blocks — add subtle glow or sparkle
+- Each on transparent background, 128x128 pixel size
+- Bright, cheerful, game UI style
+- No text
+
+Output as a single image with all 3 items in a row.</div>
+
+<hr class="divider">
+
+<!-- A-3 UI 아이콘 -->
+<h3>A-3. UI 아이콘</h3>
+
+<table>
+<thead><tr><th>#</th><th>아이콘</th><th>변형</th><th>용도</th></tr></thead>
+<tbody>
+  <tr><td>1</td><td>하트</td><td>가득 참 (빨강), 빈 하트 (회색), 깨진 하트</td><td>생명 표시</td></tr>
+  <tr><td>2</td><td>별</td><td>가득 참 (금색), 빈 별 (회색 테두리)</td><td>클리어 등급 (1~3별)</td></tr>
+  <tr><td>3</td><td>뽑기 조각</td><td>퍼즐 조각 모양 (금색 테두리, 안에 ? 마크)</td><td>뽑기 조각 수집 표시</td></tr>
+</tbody>
+</table>
+
+<div class="prompt-box"><span class="label">프롬프트 — 하트 아이콘 3종</span>
+Create 3 variations of a heart icon for a mobile puzzle game:
+1. Full heart: bright red, glossy, 3D clay style, full of life
+2. Empty heart: same shape but gray/desaturated, looks "used up"
+3. Broken heart: cracked in the middle, slightly darkened, pieces separating
+
+Same 3D clay render style. Each on transparent background, 96x96 pixels. No text.</div>
+
+<div class="prompt-box"><span class="label">프롬프트 — 별 아이콘 2종</span>
+Create 2 variations of a star icon for a mobile puzzle game:
+1. Filled star: bright golden, glossy, 3D clay style, sparkling
+2. Empty star: same shape but dark gray outline only, hollow inside
+
+Same 3D clay render style. Each on transparent background, 80x80 pixels. No text.</div>
+
+<div class="prompt-box"><span class="label">프롬프트 — 뽑기 조각 아이콘</span>
+A puzzle piece icon for a mobile game's gacha/collection system.
+Golden metallic border, question mark (?) in the center, slight glow effect.
+3D clay render style, transparent background, 96x96 pixels. No text except the "?" symbol.</div>
+
+<hr class="divider">
+
+<!-- A-4 배경 -->
+<h3>A-4. 배경 이미지</h3>
+
+<div class="prompt-box"><span class="label">프롬프트 — 게임 보드 배경</span>
+A game board background for a food-themed match-3 puzzle game.
+7x7 grid pattern, alternating slightly different shades (like a checkerboard but subtle).
+Warm wooden table texture or clean kitchen counter feel.
+Soft rounded corners on each cell. Cheerful, bright mood.
+Size: 700x700 pixels. Top-down view, flat perspective.</div>
+
+<div class="prompt-box"><span class="label">프롬프트 — 레벨 맵 배경</span>
+A vertical scrolling level map background for a food-themed mobile puzzle game.
+A winding path through a colorful cartoon food town/village.
+Buildings shaped like burgers, pizza shops, chicken restaurants along the path.
+Bright, cheerful, top-down isometric perspective. No text, no UI elements.
+Size: 750x2000 pixels. 3D clay/illustrated style.</div>
+
+<div class="prompt-box"><span class="label">프롬프트 — 게임 전체 배경 (보드 뒤)</span>
+A blurred, warm-toned background for a mobile puzzle game screen.
+Soft gradient from warm orange at top to deep red-brown at bottom.
+Subtle bokeh/light circles scattered. No objects, no text.
+Abstract, clean, works well behind a game board. Size: 750x1334 pixels.</div>
+
+<hr class="divider">
+
+<!-- A-5 팝업/버튼 -->
+<h3>A-5. 팝업 & 버튼 소재</h3>
+
+<div class="prompt-box"><span class="label">프롬프트 — 팝업 배경 프레임</span>
+A decorative popup/dialog frame for a mobile puzzle game.
+Rounded rectangle shape, golden ornate border, warm cream/beige interior.
+Top center has a banner ribbon for title text. Cheerful, game UI style.
+3D clay render. Transparent background outside the frame. Size: 600x400 pixels. No text inside.</div>
+
+<div class="prompt-box"><span class="label">프롬프트 — 버튼 소재</span>
+A set of 3 game buttons for a mobile puzzle game:
+1. Primary button: bright orange, rounded rectangle, 3D raised look with shadow, glossy
+2. Secondary button: green, same style
+3. Disabled button: gray, same shape but flat and muted
+
+Each approximately 240x70 pixels, transparent background. No text on buttons.
+3D clay render style matching the game's cheerful aesthetic.</div>
+
+<hr class="divider">
+
+<!-- A-6 뽑기 -->
+<h3>A-6. 뽑기(가챠) 연출 소재</h3>
+
+<div class="prompt-box"><span class="label">프롬프트 — 뽑기 상자</span>
+A magical treasure chest / gift box for a mobile game gacha system.
+Closed state: golden chest with a glowing crack of light escaping from the lid.
+3D clay render style, sparkles around it, warm golden glow.
+Transparent background, 256x256 pixels. No text.</div>
+
+<div class="prompt-box"><span class="label">프롬프트 — 뽑기 상자 (열린 상태)</span>
+A magical treasure chest / gift box that just opened, for a mobile game gacha system.
+Lid is flipped open, bright golden light and sparkles bursting out from inside.
+Rays of light shooting upward. 3D clay render style.
+Transparent background, 256x256 pixels. No text.</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PART B: 코드로 만드는 이펙트 -->
+<!-- ═══════════════════════════════════════════ -->
+
+<h2>Part B. 코드로 만드는 이펙트 (개발자용)</h2>
+
+<p>게임의 <em>"기분 좋은 느낌"</em>은 이미지가 아니라 이펙트가 만든다.<br>
+아래 이펙트는 전부 <strong>Canvas 2D 또는 CSS 애니메이션</strong>으로 구현한다. 별도 이미지 에셋 불필요.</p>
+
+<div class="note">
+  <strong>게임 엔진 참고:</strong> 웹뷰 기반이면 <strong>PixiJS</strong> (2D WebGL 렌더러)를 추천. Canvas 2D보다 파티클 성능이 좋고, 트윈/이징 라이브러리가 내장되어 있음. 아래 코드는 순수 Canvas/CSS 기준이지만 PixiJS로 그대로 치환 가능.
+</div>
+
+<!-- B-1 블록 터짐 -->
+<h3>B-1. 블록 터짐 이펙트</h3>
+<p>3개 이상 매칭된 블록이 사라질 때. 게임에서 가장 자주 발생하는 이펙트.</p>
+
+<h4>동작 순서 (0.3초 안에 전부 일어남)</h4>
+<table>
+<thead><tr><th>시간</th><th>무슨 일이 일어나나</th></tr></thead>
+<tbody>
+  <tr><td>0ms</td><td>매칭 판정. 해당 블록들에 <strong>"터질 예정"</strong> 표시</td></tr>
+  <tr><td>0~100ms</td><td>블록이 <strong>1.2배로 커졌다가</strong> 빠르게 <strong>0으로 축소</strong> (scale: 1→1.2→0). 동시에 투명도 1→0</td></tr>
+  <tr><td>50ms</td><td>블록 중심에서 <strong>하얀 원형 flash</strong>가 한 번 번쩍 (0.15초간 나타났다 사라짐)</td></tr>
+  <tr><td>80ms</td><td>블록 위치에서 <strong>파티클 6~8개 방출</strong>. 블록 색깔의 작은 원/사각형이 랜덤 방향으로 튀어나감</td></tr>
+  <tr><td>100ms</td><td>블록 위치에 <strong>"+점수" 텍스트</strong>가 나타남. 위로 올라가면서 사라짐 (0.5초)</td></tr>
+  <tr><td>300ms</td><td>파티클 소멸. 이펙트 완전 종료</td></tr>
+</tbody>
+</table>
+
+<div class="code-box"><span class="label">코드 — 블록 축소 애니메이션 (CSS)</span>
+/* 매칭된 블록에 이 클래스를 추가하면 터지는 애니메이션 실행 */
+@keyframes block-pop {
+  0%   { transform: scale(1);   opacity: 1; }
+  30%  { transform: scale(1.2); opacity: 1; }  /* 살짝 커짐 (팽창) */
+  100% { transform: scale(0);   opacity: 0; }  /* 사라짐 */
+}
+
+.block.matched {
+  animation: block-pop 0.2s ease-in forwards;
+  /* ease-in = 처음엔 천천히, 끝에 빠르게 → 터지는 느낌 */
+}</div>
+
+<div class="code-box"><span class="label">코드 — 파티클 시스템 (Canvas 2D 의사코드)</span>
+// 블록 1개가 터질 때 호출
+function spawnParticles(x, y, color) {
+  const count = 6 + Math.random() * 3;  // 6~8개
+
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: x,                              // 블록 중심 좌표
+      y: y,
+      vx: (Math.random() - 0.5) * 8,    // 속도: 좌우 랜덤 (-4 ~ +4)
+      vy: (Math.random() - 0.5) * 8,    // 속도: 상하 랜덤
+      size: 3 + Math.random() * 4,       // 크기: 3~7px
+      color: color,                       // 블록 색깔
+      life: 1.0,                          // 수명 (1.0 → 0.0으로 감소)
+      gravity: 0.15,                      // 중력: 아래로 끌림
+    });
+  }
+}
+
+// 매 프레임마다 호출 (requestAnimationFrame 안에서)
+function updateParticles(dt) {
+  for (const p of particles) {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vy += p.gravity;     // 중력 적용 → 포물선 궤적
+    p.life -= 0.04;         // 수명 감소 → 0 되면 제거
+    p.size *= 0.97;         // 점점 작아짐
+  }
+  particles = particles.filter(p => p.life > 0);
+}
+
+// 그리기
+function drawParticles(ctx) {
+  for (const p of particles) {
+    ctx.globalAlpha = p.life;  // 수명에 따라 투명해짐
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+    // 사각형 대신 원으로 하려면 ctx.arc() 사용
+  }
+  ctx.globalAlpha = 1;
+}
+
+// 블록별 파티클 색상 매핑
+const BLOCK_COLORS = {
+  chicken: '#F5A623',   // 금색
+  cola:    '#D0021B',   // 빨강
+  fries:   '#F8E71C',   // 노랑
+  burger:  '#8B572A',   // 갈색
+  pizza:   '#FF6B35',   // 주황
+};</div>
+
+<div class="code-box"><span class="label">코드 — 하얀 flash 효과 (Canvas 2D)</span>
+// 블록이 터지는 순간, 블록 위치에 원형 flash
+function spawnFlash(x, y) {
+  flashes.push({
+    x: x,
+    y: y,
+    radius: 5,          // 시작 크기
+    maxRadius: 30,       // 최대 크기
+    life: 1.0,
+  });
+}
+
+function drawFlashes(ctx) {
+  for (const f of flashes) {
+    const r = f.maxRadius * (1 - f.life) + f.radius;  // 점점 커짐
+    ctx.globalAlpha = f.life * 0.6;       // 점점 투명해짐
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    f.life -= 0.08;  // ~12프레임(0.2초)이면 사라짐
+  }
+  ctx.globalAlpha = 1;
+  flashes = flashes.filter(f => f.life > 0);
+}</div>
+
+<div class="code-box"><span class="label">코드 — 점수 텍스트 떠오르기 (CSS)</span>
+@keyframes score-float {
+  0%   { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-40px); opacity: 0; }
+}
+
+.score-popup {
+  position: absolute;
+  font-size: 16px;
+  font-weight: 900;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  animation: score-float 0.5s ease-out forwards;
+  pointer-events: none;  /* 클릭 방해 안 함 */
+}
+
+/* JS에서: 블록 터진 위치에 div 생성 → 0.5초 후 제거 */</div>
+
+<hr class="divider">
+
+<!-- B-2 캐스케이드 -->
+<h3>B-2. 캐스케이드(연쇄) 이펙트</h3>
+<p>블록이 떨어진 뒤 또 매칭이 일어나는 것. 연쇄가 길수록 더 화려해야 한다.</p>
+
+<h4>연쇄 횟수별 연출 단계</h4>
+<table>
+<thead><tr><th>연쇄</th><th>텍스트</th><th>글씨 크기</th><th>색상</th><th>추가 효과</th></tr></thead>
+<tbody>
+  <tr><td>x1</td><td>(없음)</td><td>-</td><td>-</td><td>기본 터짐 이펙트만</td></tr>
+  <tr><td>x2</td><td>"Good!"</td><td>24px</td><td>흰색</td><td>화면 흔들림 약하게</td></tr>
+  <tr><td>x3</td><td>"Great!!"</td><td>32px</td><td>노랑</td><td>화면 흔들림 + 배경 flash</td></tr>
+  <tr><td>x4</td><td>"Amazing!!!"</td><td>40px</td><td>주황</td><td>흔들림 강하게 + 배경 밝아짐</td></tr>
+  <tr><td>x5+</td><td>"INCREDIBLE!!!!"</td><td>48px</td><td>무지개</td><td>최대 이펙트</td></tr>
+</tbody>
+</table>
+
+<div class="code-box"><span class="label">코드 — 화면 흔들림 (Screen Shake)</span>
+// 게임 보드 전체를 감싸는 컨테이너에 적용
+let shakeIntensity = 0;
+let shakeDuration = 0;
+
+function triggerShake(intensity, duration) {
+  // intensity: 흔들림 세기 (px). 연쇄 x2=2, x3=4, x4=6, x5+=8
+  // duration: 지속 시간 (ms). 보통 200~300
+  shakeIntensity = intensity;
+  shakeDuration = duration;
+}
+
+function updateShake() {
+  if (shakeDuration <= 0) {
+    boardContainer.style.transform = 'translate(0, 0)';
+    return;
+  }
+  // 랜덤 방향으로 흔들기
+  const dx = (Math.random() - 0.5) * shakeIntensity * 2;
+  const dy = (Math.random() - 0.5) * shakeIntensity * 2;
+  boardContainer.style.transform = `translate(${dx}px, ${dy}px)`;
+
+  shakeDuration -= 16;  // 매 프레임 감소 (60fps 기준 ~16ms)
+  shakeIntensity *= 0.9;  // 점점 약해짐
+}
+
+// 사용 예시:
+// 연쇄 x2일 때: triggerShake(2, 200)
+// 연쇄 x4일 때: triggerShake(6, 300)</div>
+
+<div class="code-box"><span class="label">코드 — 연쇄 텍스트 (CSS)</span>
+@keyframes cascade-text {
+  0%   { transform: scale(0.3); opacity: 0; }
+  40%  { transform: scale(1.3); opacity: 1; }   /* 크게 튀어나옴 */
+  60%  { transform: scale(1.0); opacity: 1; }   /* 살짝 줄어듬 */
+  100% { transform: scale(1.0); opacity: 0; }   /* 사라짐 */
+}
+
+.cascade-text {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform-origin: center;
+  font-weight: 900;
+  text-shadow: 0 3px 8px rgba(0,0,0,0.4);
+  animation: cascade-text 0.8s ease-out forwards;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* JS에서: 보드 중앙에 div 생성, 연쇄 횟수에 따라
+   fontSize / color / shakeIntensity 를 다르게 세팅 */</div>
+
+<div class="code-box"><span class="label">코드 — 배경 flash (연쇄 x3+)</span>
+/* 보드 위에 겹치는 반투명 오버레이 */
+@keyframes bg-flash {
+  0%   { opacity: 0.3; }
+  100% { opacity: 0; }
+}
+
+.bg-flash-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: white;
+  pointer-events: none;
+  animation: bg-flash 0.2s ease-out forwards;
+}
+
+/* JS에서: 연쇄 x3 이상이면 오버레이 div 생성 → 0.2초 후 제거 */</div>
+
+<hr class="divider">
+
+<!-- B-3 블록 낙하 -->
+<h3>B-3. 블록 낙하 애니메이션</h3>
+<p>터진 자리에 위 블록들이 떨어지는 것. 자연스러운 "쿵" 느낌이 중요.</p>
+
+<div class="code-box"><span class="label">코드 — 낙하 + 바운스 (CSS)</span>
+@keyframes block-drop {
+  0%   { transform: translateY(-{distance}px); }
+  70%  { transform: translateY(0px); }           /* 착지 */
+  80%  { transform: translateY(-4px); }          /* 살짝 위로 튀어오름 */
+  90%  { transform: translateY(0px); }           /* 다시 내려옴 */
+  95%  { transform: translateY(-1px); }          /* 아주 살짝 */
+  100% { transform: translateY(0px); }           /* 최종 위치 */
+}
+
+/* {distance} = 떨어지는 칸 수 × 셀 높이(px)
+   예: 2칸 떨어지면 distance = 2 * 64 = 128px
+
+   duration: 떨어지는 거리에 비례. 1칸=0.15s, 2칸=0.25s, 3칸=0.3s
+   → 너무 느리면 답답하고, 너무 빠르면 연쇄를 못 봄 */
+
+.block.dropping {
+  animation: block-drop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  /* cubic-bezier(0.34, 1.56, ...) = 살짝 오버슈트하는 커브 → 바운스 느낌 */
+}</div>
+
+<hr class="divider">
+
+<!-- B-4 도구 이펙트 -->
+<h3>B-4. 도구 이펙트 3종</h3>
+<p>도구는 뽑기나 보상으로 얻는 귀한 것. <em>일반 매칭보다 2배 화려하게</em> 만들어야 "쓴 보람"이 있다.</p>
+
+<h4>로켓 — 한 줄 전체 제거</h4>
+<table>
+<thead><tr><th>시간</th><th>무슨 일이 일어나나</th></tr></thead>
+<tbody>
+  <tr><td>0ms</td><td>로켓 아이콘이 해당 셀에 나타남 (scale 0→1, 바운스)</td></tr>
+  <tr><td>200ms</td><td>로켓이 <strong>빛줄기(beam)</strong>를 남기며 가로 or 세로로 이동. 이동 속도 = 0.3초에 보드 끝까지</td></tr>
+  <tr><td>200~500ms</td><td>빛줄기가 <strong>지나간 자리</strong>의 블록들이 순서대로 터짐 (왼→오 or 위→아래). 한 칸당 30ms 간격</td></tr>
+  <tr><td>500ms</td><td>모든 블록 터짐 완료. 파티클 잔여</td></tr>
+</tbody>
+</table>
+
+<div class="code-box"><span class="label">코드 — 로켓 빛줄기 (Canvas 2D)</span>
+// 로켓이 지나간 자리에 빛줄기 그리기
+function drawRocketBeam(ctx, startX, startY, endX, endY, progress) {
+  // progress: 0→1 (로켓 이동 진행도)
+  const currentX = startX + (endX - startX) * progress;
+  const currentY = startY + (endY - startY) * progress;
+
+  // 빛줄기 (반투명 직사각형)
+  const beamWidth = 12;
+  ctx.globalAlpha = 0.6;
+  const gradient = ctx.createLinearGradient(startX, startY, currentX, currentY);
+  gradient.addColorStop(0, 'rgba(255, 200, 50, 0)');    // 시작점: 투명
+  gradient.addColorStop(0.7, 'rgba(255, 200, 50, 0.8)'); // 중간: 밝음
+  gradient.addColorStop(1, 'rgba(255, 255, 255, 1)');     // 끝: 흰색
+
+  ctx.fillStyle = gradient;
+  // 가로 로켓이면:
+  ctx.fillRect(startX, startY - beamWidth/2,
+               currentX - startX, beamWidth);
+  ctx.globalAlpha = 1;
+}
+
+// 로켓 아이콘은 A-2에서 만든 PNG를 currentX, currentY에 그리면 됨
+// ctx.drawImage(rocketImg, currentX - 32, currentY - 32, 64, 64);</div>
+
+<h4>폭탄 — 3×3 영역 제거</h4>
+<table>
+<thead><tr><th>시간</th><th>무슨 일이 일어나나</th></tr></thead>
+<tbody>
+  <tr><td>0ms</td><td>폭탄 아이콘이 해당 셀에 나타남</td></tr>
+  <tr><td>0~300ms</td><td>폭탄이 좌우로 <strong>빠르게 흔들림</strong> (틱틱틱 느낌). 점점 빨라짐</td></tr>
+  <tr><td>300ms</td><td><strong>폭발!</strong> 폭탄 사라짐 + 충격파 원이 중심에서 퍼져나감</td></tr>
+  <tr><td>300~500ms</td><td>충격파가 퍼지면서 3×3 영역의 블록들이 동시에 터짐. 화면 흔들림(강)</td></tr>
+  <tr><td>500ms</td><td>파티클(많이) + 연기 효과 잔여</td></tr>
+</tbody>
+</table>
+
+<div class="code-box"><span class="label">코드 — 충격파 링 (Canvas 2D)</span>
+function spawnShockwave(x, y) {
+  shockwaves.push({
+    x: x, y: y,
+    radius: 0,
+    maxRadius: 100,  // 3×3 영역을 커버하는 크기
+    lineWidth: 6,
+    life: 1.0,
+  });
+}
+
+function drawShockwaves(ctx) {
+  for (const s of shockwaves) {
+    const progress = 1 - s.life;
+    s.radius = s.maxRadius * progress;
+    s.lineWidth = 6 * s.life;  // 점점 얇아짐
+
+    ctx.globalAlpha = s.life * 0.8;
+    ctx.strokeStyle = '#FFD600';
+    ctx.lineWidth = s.lineWidth;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    s.life -= 0.06;  // ~16프레임(0.27초)이면 사라짐
+  }
+  ctx.globalAlpha = 1;
+  shockwaves = shockwaves.filter(s => s.life > 0);
+}
+
+// 폭탄 흔들림은 CSS로:
+// @keyframes bomb-shake {
+//   0%, 100% { transform: translateX(0); }
+//   25%      { transform: translateX(-3px); }
+//   75%      { transform: translateX(3px); }
+// }
+// .bomb-shaking { animation: bomb-shake 0.08s infinite; }
+// → 0.3초 후 클래스 제거하고 폭발 트리거</div>
+
+<h4>무지개 — 선택한 종류 전부 제거</h4>
+<table>
+<thead><tr><th>시간</th><th>무슨 일이 일어나나</th></tr></thead>
+<tbody>
+  <tr><td>0ms</td><td>유저가 제거할 블록 종류를 탭 (예: 치킨 선택)</td></tr>
+  <tr><td>0~300ms</td><td>보드 위의 모든 치킨 블록이 <strong>빛나기 시작</strong> (밝기 증가 + 살짝 커짐)</td></tr>
+  <tr><td>300~600ms</td><td>빛나는 블록들이 <strong>무지개 아이콘 위치로 빨려들어감</strong> (블록이 작아지면서 무지개 쪽으로 이동)</td></tr>
+  <tr><td>600ms</td><td>전체화면 <strong>흰색 flash</strong> (0.15초)</td></tr>
+  <tr><td>600~800ms</td><td>해당 블록들 위치에서 동시에 파티클 폭발. <strong>무지개색 파티클</strong>이 화면 전체에 흩날림</td></tr>
+  <tr><td>800ms</td><td>화면 흔들림(강). 파티클 잔여</td></tr>
+</tbody>
+</table>
+
+<div class="code-box"><span class="label">코드 — 블록이 빨려들어가는 효과</span>
+// 무지개 위치(targetX, targetY)를 향해 블록들이 이동
+function animateBlocksToTarget(blocks, targetX, targetY, duration) {
+  blocks.forEach((block, i) => {
+    const startX = block.x;
+    const startY = block.y;
+    const delay = i * 20;  // 블록마다 20ms 딜레이 → 순차적 느낌
+
+    // CSS transition 또는 JS 트윈으로:
+    setTimeout(() => {
+      block.element.style.transition = `all ${duration}ms ease-in`;
+      block.element.style.transform =
+        `translate(${targetX - startX}px, ${targetY - startY}px) scale(0.2)`;
+      block.element.style.opacity = '0.5';
+    }, delay);
+  });
+
+  // duration + 마지막 딜레이 후 → 전체 flash 트리거
+  setTimeout(() => {
+    triggerFullScreenFlash();
+    triggerShake(8, 300);
+    spawnRainbowParticles(targetX, targetY, 30);  // 파티클 많이
+  }, duration + blocks.length * 20);
+}
+
+// 무지개 파티클: 일반 파티클과 같지만 색상이 랜덤 무지개
+function spawnRainbowParticles(x, y, count) {
+  const colors = ['#FF0000','#FF7700','#FFDD00','#00DD00','#0077FF','#8800FF'];
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: x, y: y,
+      vx: (Math.random() - 0.5) * 12,  // 더 넓게 퍼짐
+      vy: (Math.random() - 0.5) * 12,
+      size: 4 + Math.random() * 5,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      life: 1.0,
+      gravity: 0.1,
+    });
+  }
+}</div>
+
+<hr class="divider">
+
+<!-- B-5 클리어/실패 -->
+<h3>B-5. 클리어 & 실패 연출</h3>
+
+<h4>클리어 성공</h4>
+<table>
+<thead><tr><th>시간</th><th>연출</th></tr></thead>
+<tbody>
+  <tr><td>0ms</td><td>남은 블록들이 위에서부터 순서대로 터짐 (행마다 0.1초 간격)</td></tr>
+  <tr><td>0~700ms</td><td>각 블록 터질 때마다 파티클 + 점수 추가</td></tr>
+  <tr><td>700ms</td><td>전체화면 flash + 큰 텍스트 "Clear!" (scale 0→1.3→1 바운스)</td></tr>
+  <tr><td>1000ms</td><td>별 떨어지는 애니메이션 (1~3개, 위에서 제자리로 떨어져 내려옴)</td></tr>
+  <tr><td>1500ms</td><td>결과 팝업 표시</td></tr>
+</tbody>
+</table>
+
+<h4>클리어 실패</h4>
+<table>
+<thead><tr><th>시간</th><th>연출</th></tr></thead>
+<tbody>
+  <tr><td>0ms</td><td>"이동 0" 텍스트가 빨갛게 깜빡</td></tr>
+  <tr><td>200ms</td><td>보드 전체에 <strong>어두운 오버레이</strong>가 서서히 깔림 (opacity 0→0.5, 0.5초)</td></tr>
+  <tr><td>700ms</td><td>"실패" 텍스트 + 남은 목표 블록 표시</td></tr>
+  <tr><td>1000ms</td><td>실패 팝업 (도구 사용 유도 or 하트 사용 or 주문 유도)</td></tr>
+</tbody>
+</table>
+
+<div class="code-box"><span class="label">코드 — 별 떨어지기 (클리어 시)</span>
+@keyframes star-drop {
+  0%   { transform: translateY(-200px) rotate(-30deg); opacity: 0; }
+  60%  { transform: translateY(10px) rotate(5deg);     opacity: 1; }
+  80%  { transform: translateY(-5px) rotate(-2deg);    opacity: 1; }
+  100% { transform: translateY(0) rotate(0deg);        opacity: 1; }
+}
+
+.star-earned {
+  animation: star-drop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* 3별이면 3개를 각각 딜레이 줘서:
+   별1: delay 0s
+   별2: delay 0.2s
+   별3: delay 0.4s
+   → 순서대로 떨어지는 느낌 */</div>
+
+<hr class="divider">
+
+<!-- B-6 기타 -->
+<h3>B-6. 기타 소소한 이펙트</h3>
+
+<div class="card">
+<table>
+<thead><tr><th>이펙트</th><th>언제</th><th>구현</th></tr></thead>
+<tbody>
+  <tr><td>블록 스왑</td><td>유저가 두 블록을 교환할 때</td><td>두 블록이 0.15초에 서로 위치 교환. CSS transition: transform 0.15s ease</td></tr>
+  <tr><td>잘못된 스왑</td><td>교환해도 매칭이 안 될 때</td><td>두 블록이 교환 후 바로 원위치로 돌아옴 (0.15초 갔다가 0.15초 복귀). 보드 살짝 흔들림</td></tr>
+  <tr><td>힌트</td><td>3초간 입력 없을 때</td><td>매칭 가능한 블록 2개가 살짝 위아래로 흔들림. CSS: translateY(-3px) → translateY(3px) 반복</td></tr>
+  <tr><td>셔플</td><td>매칭 가능한 수가 없을 때</td><td>"셔플 중..." 텍스트 + 모든 블록이 중앙으로 모였다가 새 위치로 흩어짐 (0.5초)</td></tr>
+  <tr><td>목표 카운트</td><td>목표 블록을 1개 모을 때마다</td><td>HUD의 목표 수치가 바운스 (scale 1→1.3→1, 0.2초) + 색깔 잠깐 밝아짐</td></tr>
+  <tr><td>이동 횟수 감소</td><td>스왑할 때마다</td><td>이동 횟수 숫자가 바운스. 남은 5회 이하면 빨간색으로 변경 + 깜빡</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PART C: 사운드 -->
+<!-- ═══════════════════════════════════════════ -->
+
+<h2>Part C. 사운드 + 햅틱</h2>
+
+<p>사운드는 <strong>freesound.org</strong>에서 무료로 구한다. 아래에 추천 링크를 걸어둠.<br>
+햅틱(진동)은 사운드와 함께 넣어야 "터지는 느낌"이 완성된다.</p>
+
+<h3>C-1. 사운드 에셋</h3>
+
+<div class="card">
+<table>
+<thead><tr><th>사운드</th><th>추천 에셋 (클릭하면 freesound로 이동)</th><th>길이</th><th>비고</th></tr></thead>
+<tbody>
+  <tr><td>블록 터짐</td>
+    <td><a href="https://freesound.org/people/elmasmalo1/sounds/377020/" target="_blank" style="color:#4CAF50;">Bubble Pop - High Pitched Short</a><br>
+    <a href="https://freesound.org/people/el_boss/sounds/665181/" target="_blank" style="color:#4CAF50;">Item Pickup Pop 3 of 3</a><br>
+    <a href="https://freesound.org/people/elmasmalo1/packs/19949/" target="_blank" style="color:#4CAF50;">Game Assets Pack (pop 여러 종)</a></td>
+    <td>0.08초</td><td>가장 중요! 경쾌하고 짧아야 함. 여러 개 받아서 랜덤 재생하면 좋음</td></tr>
+  <tr><td>연쇄 터짐</td>
+    <td>↑ 같은 pop 소리를 코드에서 pitch 올려서 재사용</td>
+    <td>0.08초</td><td>playbackRate: x2=1.15, x3=1.30, x4=1.45</td></tr>
+  <tr><td>블록 스왑</td>
+    <td><a href="https://freesound.org/people/qubodup/sounds/60007/" target="_blank" style="color:#4CAF50;">Swipe Whoosh (qubodup)</a><br>
+    <a href="https://freesound.org/people/Kinoton/sounds/427823/" target="_blank" style="color:#4CAF50;">Whoosh #1 (Kinoton)</a></td>
+    <td>0.1초</td><td>짧은 이동음. 너무 길면 안 됨</td></tr>
+  <tr><td>로켓</td>
+    <td><a href="https://freesound.org/people/Jofae/sounds/352852/" target="_blank" style="color:#4CAF50;">Game Style Laser Beam (Jofae)</a><br>
+    <a href="https://freesound.org/people/Speedenza/sounds/168042/" target="_blank" style="color:#4CAF50;">Whoosh Laser Zap (Speedenza)</a></td>
+    <td>0.3~0.5초</td><td>슈웅~ 하는 느낌</td></tr>
+  <tr><td>폭탄</td>
+    <td><a href="https://freesound.org/people/Jofae/sounds/368591/" target="_blank" style="color:#4CAF50;">Retro Explosion (Jofae)</a><br>
+    <a href="https://freesound.org/people/AceOfSpadesProduc100/sounds/334266/" target="_blank" style="color:#4CAF50;">Short Explosion 1</a></td>
+    <td>0.3초</td><td>쾅! 하지만 귀엽게. 레트로 스타일 추천</td></tr>
+  <tr><td>무지개</td>
+    <td><a href="https://freesound.org/people/smokinghotdog/sounds/584244/" target="_blank" style="color:#4CAF50;">Magic Stars Retro Sparkle</a><br>
+    <a href="https://freesound.org/people/InspectorJ/sounds/411460/" target="_blank" style="color:#4CAF50;">Power Up, Bright (InspectorJ)</a><br>
+    <a href="https://freesound.org/people/GameAudio/sounds/220173/" target="_blank" style="color:#4CAF50;">Spacey 1up/Power up</a></td>
+    <td>0.5초</td><td>쫘르르~ 마법 느낌</td></tr>
+  <tr><td>클리어</td>
+    <td><a href="https://freesound.org/people/SilverIllusionist/sounds/668888/" target="_blank" style="color:#4CAF50;">RPG Victory Fanfare Short</a><br>
+    <a href="https://freesound.org/people/humanoide9000/sounds/466133/" target="_blank" style="color:#4CAF50;">Victory Fanfare (humanoide9000)</a></td>
+    <td>1~2초</td><td>짜잔~ 승리 팡파레</td></tr>
+  <tr><td>실패</td>
+    <td><a href="https://freesound.org/people/davidbain/sounds/135831/" target="_blank" style="color:#4CAF50;">End Game - Fail (davidbain)</a><br>
+    <a href="https://freesound.org/people/Mountain_Man/sounds/382310/" target="_blank" style="color:#4CAF50;">Game Over Arcade (CC0)</a></td>
+    <td>1초</td><td>아쉬운 느낌. Arcade 버전은 CC0 (저작자 표기 불필요)</td></tr>
+  <tr><td>별 획득</td>
+    <td><a href="https://freesound.org/s/346404/" target="_blank" style="color:#4CAF50;">Gem Collect Ding (Robinhood76)</a></td>
+    <td>0.2초</td><td>별 떨어질 때마다 1회. 피치 올려서 3번 재생하면 별 3개 연출</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="note">
+  <strong>라이선스 주의:</strong> freesound.org 에셋은 대부분 CC BY (저작자 표기 필요) 또는 CC0 (자유 사용). 다운로드할 때 각 에셋의 라이선스를 확인하고, 앱 크레딧에 표기하면 됨.
+</div>
+
+<div class="code-box"><span class="label">코드 — 연쇄 시 피치 올리기</span>
+// 같은 사운드 파일을 피치만 바꿔서 재생
+function playMatchSound(cascadeCount) {
+  const audio = new Audio('pop.mp3');
+  audio.playbackRate = 1.0 + (cascadeCount - 1) * 0.15;
+  // x1=1.0, x2=1.15, x3=1.30, x4=1.45 → 점점 높아지는 음
+  audio.volume = Math.min(1.0, 0.5 + cascadeCount * 0.1);
+  // 연쇄가 길수록 볼륨도 살짝 올림
+  audio.play();
+}
+
+// BGM은 Suno AI (suno.com)로 생성 가능
+// 프롬프트: "cheerful casual mobile puzzle game background music,
+//           loop-friendly, bright and playful, 120bpm, 30 seconds"</div>
+
+<hr class="divider">
+
+<!-- C-2 햅틱 -->
+<h3>C-2. 햅틱(진동) 피드백</h3>
+
+<p>소리 없이 진동만 있어도 "터지는 느낌"이 난다. <strong>소리 + 진동이 같이 나오면 쾌감이 2배.</strong><br>
+웹뷰에서는 <code>navigator.vibrate()</code> API를 쓴다. iOS Safari는 미지원이라 네이티브 브릿지가 필요.</p>
+
+<div class="card">
+<table>
+<thead><tr><th>액션</th><th>진동 패턴</th><th>세기</th><th>느낌</th></tr></thead>
+<tbody>
+  <tr><td>블록 스왑</td><td>10ms × 1회</td><td>약</td><td>톡. 손끝에 살짝 느껴지는 정도</td></tr>
+  <tr><td>잘못된 스왑</td><td>[10, 50, 10]ms (진동-쉼-진동)</td><td>약</td><td>틱틱. "안 돼" 느낌</td></tr>
+  <tr><td>블록 3매칭</td><td>15ms × 1회</td><td>중</td><td>탁. 기분 좋은 짧은 터치</td></tr>
+  <tr><td>연쇄 x2</td><td>20ms × 1회</td><td>중</td><td>탁! 조금 더 강하게</td></tr>
+  <tr><td>연쇄 x3</td><td>[15, 30, 25]ms</td><td>강</td><td>타닥! 두 번 연속</td></tr>
+  <tr><td>연쇄 x4+</td><td>[15, 20, 15, 20, 30]ms</td><td>강</td><td>타다닥! 세 번 연속. 점점 강해짐</td></tr>
+  <tr><td>로켓 발사</td><td>[10, 10, 10, 10, 10, 10, 50]ms</td><td>중→강</td><td>르르르르...쾅! 진동이 가속되다가 마지막에 강하게</td></tr>
+  <tr><td>폭탄 폭발</td><td>[30, 0, 50]ms</td><td>강</td><td>쿵...쾅! 잠깐 멈췄다가 강하게</td></tr>
+  <tr><td>무지개 발동</td><td>[10, 20, 10, 20, 10, 20, 80]ms</td><td>약→강</td><td>르르르르...빠아앙! 점점 빌드업되다가 폭발</td></tr>
+  <tr><td>클리어 성공</td><td>[30, 50, 30, 50, 100]ms</td><td>강</td><td>빵! 빵! 빠아앙! 축하 느낌</td></tr>
+  <tr><td>클리어 실패</td><td>[50, 100, 30]ms</td><td>중</td><td>쿵...틱. 무거운 느낌 후 짧게</td></tr>
+  <tr><td>별 획득</td><td>20ms × 1회</td><td>중</td><td>딩! 별마다 1회씩</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="code-box"><span class="label">코드 — 햅틱 구현 (웹뷰)</span>
+// === 방법 1: Web Vibration API (Android 웹뷰에서 동작) ===
+function haptic(pattern) {
+  if (navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+}
+
+// 사용 예시:
+haptic(15);                          // 블록 매칭: 15ms 짧은 진동
+haptic([15, 30, 25]);                // 연쇄 x3: 진동-쉼-진동 패턴
+haptic([10, 10, 10, 10, 10, 10, 50]); // 로켓: 짧은 진동 반복 후 강한 진동
+
+// 숫자 배열 = [진동ms, 쉼ms, 진동ms, 쉼ms, ...]
+// [15, 30, 25] = 15ms 진동 → 30ms 쉼 → 25ms 진동
+
+
+// === 방법 2: iOS 네이티브 브릿지 (iOS Safari는 vibrate 미지원) ===
+// 네이티브 앱에서 웹뷰 메시지를 받아서 UIImpactFeedbackGenerator 호출
+
+// 웹뷰 → 네이티브:
+function hapticNative(type) {
+  // type: 'light', 'medium', 'heavy', 'soft', 'rigid'
+  window.webkit?.messageHandlers?.haptic?.postMessage(type);
+  // 또는 Android: AndroidBridge.haptic(type);
+}
+
+// 네이티브 (Swift) 쪽:
+// func handleHaptic(_ type: String) {
+//   switch type {
+//   case "light":  UIImpactFeedbackGenerator(style: .light).impactOccurred()
+//   case "medium": UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+//   case "heavy":  UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+//   case "soft":   UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+//   case "rigid":  UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+//   default: break
+//   }
+// }
+
+// === 매핑 ===
+// iOS에서는 패턴 대신 강도 타입으로 호출:
+const HAPTIC_MAP = {
+  swap:       'light',    // 블록 스왑
+  match:      'medium',   // 3매칭
+  cascade2:   'medium',   // 연쇄 x2
+  cascade3:   'heavy',    // 연쇄 x3
+  cascade4:   'rigid',    // 연쇄 x4+
+  rocket:     'rigid',    // 로켓
+  bomb:       'heavy',    // 폭탄
+  rainbow:    'heavy',    // 무지개
+  clear:      'heavy',    // 클리어
+  fail:       'medium',   // 실패
+  star:       'medium',   // 별 획득
+  wrongSwap:  'soft',     // 잘못된 스왑
+};</div>
+
+<div class="note">
+  <strong>핵심 원칙:</strong><br>
+  • <strong>짧을수록 좋다.</strong> 진동이 길면 불쾌하다. 대부분 10~30ms면 충분.<br>
+  • <strong>소리와 동시에.</strong> pop 사운드가 나는 바로 그 순간에 진동도 같이 나와야 한다.<br>
+  • <strong>연쇄는 빌드업.</strong> 연쇄가 길어질수록 진동이 강해지고 빈번해져야 "와 이거 개쩐다" 느낌이 남.<br>
+  • <strong>도구는 패턴이 있어야.</strong> 일반 매칭과 확실히 다른 진동 패턴이어야 "특별한 걸 썼다" 느낌.<br>
+  • <strong>iOS는 네이티브 브릿지 필수.</strong> Web Vibration API는 iOS Safari에서 안 됨. 네이티브 앱에서 햅틱 엔진을 호출하는 브릿지를 만들어야 함.
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PART D: 체크리스트 -->
+<!-- ═══════════════════════════════════════════ -->
+
+<h2>Part D. 제작 체크리스트</h2>
+
+<div class="card" style="border-color: rgba(255,107,0,0.3); background: rgba(255,107,0,0.06);">
+<h3>Phase 1 — 이것 없으면 게임이 안 됨</h3>
+<ul class="checklist">
+  <li>블록 5종 PNG (AI 생성)</li>
+  <li>도구 아이콘 3종 PNG (AI 생성)</li>
+  <li>게임 보드 배경 (AI 생성)</li>
+  <li>블록 터짐 이펙트 (코드: 축소 + 파티클 + flash)</li>
+  <li>블록 낙하 애니메이션 (코드: drop + bounce)</li>
+  <li>블록 스왑 애니메이션 (코드: 위치 교환)</li>
+  <li>로켓/폭탄/무지개 이펙트 (코드)</li>
+  <li>연쇄 카운터 텍스트 + 화면 흔들림 (코드)</li>
+  <li>블록 터짐 사운드 (freesound.org에서 다운로드)</li>
+  <li>햅틱 브릿지 (iOS 네이티브 UIImpactFeedbackGenerator 연동)</li>
+  <li>블록 매칭/연쇄 햅틱 (코드)</li>
+</ul>
+
+<h3>Phase 2 — 없으면 허전함</h3>
+<ul class="checklist">
+  <li>하트/별/뽑기조각 아이콘 (AI 생성)</li>
+  <li>팝업 프레임 + 버튼 (AI 생성)</li>
+  <li>레벨 맵 배경 (AI 생성)</li>
+  <li>클리어/실패 연출 (코드)</li>
+  <li>힌트 애니메이션 (코드)</li>
+  <li>목표 카운트 바운스 (코드)</li>
+  <li>도구/클리어/실패 사운드 (freesound.org에서 다운로드)</li>
+  <li>도구 햅틱 패턴 (로켓 빌드업, 폭탄 충격, 무지개 빌드업)</li>
+  <li>뽑기 상자 이미지 (AI 생성)</li>
+</ul>
+
+<h3>Phase 3 — 나중에 추가</h3>
+<ul class="checklist">
+  <li>블록 아이들 모션 (2~4프레임 반복)</li>
+  <li>배경 컬러 시프트 (연쇄 많을 때)</li>
+  <li>BGM (Suno AI 생성)</li>
+  <li>게임 전체 배경 그라데이션 (AI 생성)</li>
+</ul>
+</div>
+
+<div class="note">
+  <strong>AI 이미지는 Phase 1 + 2 합쳐서 ~20장.</strong> GPT-4o로 하면 1~2시간이면 전부 만들 수 있다.<br>
+  <strong>코드 이펙트는 Phase 1이 핵심.</strong> 파티클 시스템 1개 만들어두면 나머지는 파라미터만 바꾸는 것.
+</div>
+
+</div>
+</body>
+</html>

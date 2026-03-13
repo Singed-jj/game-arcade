@@ -1,27 +1,28 @@
 import { type LevelConfig, BlockType } from './types'
 
 /** 레벨 1~10 수동 설계
- * 난이도 곡선: 블록/이동 비율 1.0→1.4→1.6→1.8→1.9→2.0→2.1→2.0→2.2→2.3
- * 레벨 5, 8, 10은 3종류 목표로 변화 부여
+ * 난이도 곡선: 몰입(1~3) → 첫 실패 유도(4) → 도구 유도(5) → 숨돌리기(6) → 어려움(7) → 숨돌리기(8) → 어려움(9) → 보스(10)
+ * 레벨 8, 10은 3종류 목표, 나머지는 2종류
  */
 const HAND_CRAFTED: LevelConfig[] = [
-  // 튜토리얼: 관대한 이동 횟수, 2종류
-  { level: 1,  moves: 26, objectives: [{ blockType: BlockType.CHICKEN, count: 14 }, { blockType: BlockType.COLA, count: 14 }] },
-  // 2~4: 점진적 난이도 상승
-  { level: 2,  moves: 22, objectives: [{ blockType: BlockType.FRIES, count: 16 }, { blockType: BlockType.BURGER, count: 16 }] },
-  { level: 3,  moves: 20, objectives: [{ blockType: BlockType.CHICKEN, count: 17 }, { blockType: BlockType.PIZZA, count: 17 }] },
-  { level: 4,  moves: 19, objectives: [{ blockType: BlockType.COLA, count: 17 }, { blockType: BlockType.FRIES, count: 17 }] },
-  // 5: 첫 3종류 목표 (쉬운 것으로)
-  { level: 5,  moves: 22, objectives: [{ blockType: BlockType.CHICKEN, count: 12 }, { blockType: BlockType.COLA, count: 12 }, { blockType: BlockType.PIZZA, count: 10 }] },
-  // 6~7: 2종류 고난이도
-  { level: 6,  moves: 17, objectives: [{ blockType: BlockType.FRIES, count: 17 }, { blockType: BlockType.PIZZA, count: 17 }] },
-  { level: 7,  moves: 15, objectives: [{ blockType: BlockType.COLA, count: 16 }, { blockType: BlockType.BURGER, count: 16 }] },
-  // 8: 3종류 복귀
-  { level: 8,  moves: 20, objectives: [{ blockType: BlockType.CHICKEN, count: 12 }, { blockType: BlockType.PIZZA, count: 12 }, { blockType: BlockType.FRIES, count: 10 }] },
-  // 9: 2종류 고강도
-  { level: 9,  moves: 14, objectives: [{ blockType: BlockType.BURGER, count: 16 }, { blockType: BlockType.FRIES, count: 16 }] },
-  // 10: 3종류 보스레벨
-  { level: 10, moves: 15, objectives: [{ blockType: BlockType.CHICKEN, count: 12 }, { blockType: BlockType.COLA, count: 12 }, { blockType: BlockType.FRIES, count: 12 }] },
+  // 1~3: 튜토리얼 & 몰입 단계
+  { level: 1,  moves: 25, objectives: [{ blockType: BlockType.CHICKEN, count: 12 }, { blockType: BlockType.COLA, count: 12 }] },
+  { level: 2,  moves: 23, objectives: [{ blockType: BlockType.FRIES, count: 13 }, { blockType: BlockType.BURGER, count: 13 }] },
+  { level: 3,  moves: 20, objectives: [{ blockType: BlockType.CHICKEN, count: 14 }, { blockType: BlockType.PIZZA, count: 14 }] },
+  // 4: 첫 실패 유도
+  { level: 4,  moves: 18, objectives: [{ blockType: BlockType.COLA, count: 15 }, { blockType: BlockType.FRIES, count: 15 }] },
+  // 5: 첫 도구 유도 (클리어율 45%) — 2종류 목표
+  { level: 5,  moves: 17, objectives: [{ blockType: BlockType.CHICKEN, count: 15 }, { blockType: BlockType.COLA, count: 15 }] },
+  // 6: 숨돌리기
+  { level: 6,  moves: 16, objectives: [{ blockType: BlockType.FRIES, count: 14 }, { blockType: BlockType.PIZZA, count: 14 }] },
+  // 7: 어려움
+  { level: 7,  moves: 13, objectives: [{ blockType: BlockType.COLA, count: 16 }, { blockType: BlockType.BURGER, count: 16 }] },
+  // 8: 숨돌리기 (3종류)
+  { level: 8,  moves: 15, objectives: [{ blockType: BlockType.CHICKEN, count: 12 }, { blockType: BlockType.PIZZA, count: 12 }, { blockType: BlockType.FRIES, count: 12 }] },
+  // 9: 어려움
+  { level: 9,  moves: 12, objectives: [{ blockType: BlockType.BURGER, count: 18 }, { blockType: BlockType.FRIES, count: 18 }] },
+  // 10: 보스 레벨 (3종류)
+  { level: 10, moves: 10, objectives: [{ blockType: BlockType.CHICKEN, count: 12 }, { blockType: BlockType.COLA, count: 12 }, { blockType: BlockType.FRIES, count: 12 }] },
 ]
 
 /** 시드 기반 의사 난수 (레벨 번호로 결정적) */

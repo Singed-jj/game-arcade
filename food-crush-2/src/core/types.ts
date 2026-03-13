@@ -139,5 +139,15 @@ export interface LevelConfig {
 /** 보드 그리드 타입 (col-major: grid[col][row]) */
 export type BoardGrid = (BlockType | -1)[][]
 
+/** 뽑기 결과 타입 */
+export type GachaResultType = 'tool1' | 'tool3' | 'coupon1000' | 'coupon2000' | 'chicken'
+
+/** 뽑기 결과 */
+export interface GachaResult {
+  type: GachaResultType
+  tools?: string[]      // tool1: ['ROCKET'] 또는 ['BOMB'], tool3: ['ROCKET','BOMB','RAINBOW']
+  couponValue?: number  // 1000 또는 2000
+}
+
 /** 빈 셀 */
 export const EMPTY = -1 as const

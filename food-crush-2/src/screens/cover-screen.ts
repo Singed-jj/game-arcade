@@ -23,45 +23,68 @@ export class CoverScreen {
     logoWrap.appendChild(logo)
 
     const subtitle = document.createElement('p')
-    subtitle.textContent = '맛있는 퍼즐 어드벤처'
+    subtitle.textContent = '두잇 미니게임'
     subtitle.className = 'text-white/60 text-sm mt-1 tracking-wider'
     logoWrap.appendChild(subtitle)
 
+    // 슬로건
+    const slogan = document.createElement('p')
+    slogan.className = 'text-sm text-white/80 mt-2'
+    slogan.innerHTML = '깰 때마다 공짜 <span class="text-yellow-300 font-bold">쿠폰</span>이 쏟아진다!'
+    logoWrap.appendChild(slogan)
+
     container.appendChild(logoWrap)
 
-    // --- 미리보기 블록 그리드 (4x2) ---
+    // --- 미리보기 블록 그리드 (4x6) ---
     const previewWrap = document.createElement('div')
     previewWrap.className = 'relative z-10 mb-10'
 
     const grid = document.createElement('div')
     grid.style.display = 'grid'
-    grid.style.gridTemplateColumns = 'repeat(4, 52px)'
-    grid.style.gap = '6px'
+    grid.style.gridTemplateColumns = 'repeat(4, 44px)'
+    grid.style.gap = '5px'
 
-    const blockOrder = [
-      BlockType.CHICKEN, BlockType.COLA, BlockType.FRIES, BlockType.BURGER,
-      BlockType.PIZZA, BlockType.CHICKEN, BlockType.COLA, BlockType.FRIES,
-    ]
+    const blockTypes = [BlockType.CHICKEN, BlockType.COLA, BlockType.FRIES, BlockType.BURGER, BlockType.PIZZA]
+    const blockOrder: BlockType[] = []
+    for (let i = 0; i < 24; i++) {
+      blockOrder.push(blockTypes[i % blockTypes.length])
+    }
 
     blockOrder.forEach((type, i) => {
       const cell = document.createElement('div')
-      cell.className = 'flex items-center justify-center rounded-xl text-2xl'
-      cell.style.width = '52px'
-      cell.style.height = '52px'
+      cell.className = 'flex items-center justify-center rounded-xl text-xl'
+      cell.style.width = '44px'
+      cell.style.height = '44px'
       cell.style.background = BLOCK_GRADIENTS[type]
       cell.style.boxShadow = '0 3px 8px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.4)'
-      cell.style.animationDelay = `${i * 0.06}s`
+      cell.style.animationDelay = `${i * 0.04}s`
       cell.style.animation = 'cover-block-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both'
       cell.textContent = BLOCK_EMOJIS[type]
       grid.appendChild(cell)
     })
 
     previewWrap.appendChild(grid)
+
+    // COMBO ×3 배지 (우상단 오버레이)
+    const comboBadge = document.createElement('div')
+    comboBadge.textContent = 'COMBO ×3'
+    comboBadge.className = 'absolute top-0 right-0 text-xs font-bold text-white px-2 py-1 rounded-bl-lg rounded-tr-lg'
+    comboBadge.style.background = 'linear-gradient(135deg, #f97316, #ea580c)'
+    comboBadge.style.boxShadow = '0 2px 8px rgba(249,115,22,0.5)'
+    comboBadge.style.transform = 'translate(4px, -4px)'
+    previewWrap.appendChild(comboBadge)
+
     container.appendChild(previewWrap)
+
+    // --- 소셜 라인 ---
+    const socialLine = document.createElement('p')
+    socialLine.textContent = '🟢 지금 1,247명 플레이 중'
+    socialLine.className = 'relative z-10 text-xs text-green-300 mb-3'
+    container.appendChild(socialLine)
 
     // --- 시작하기 버튼 ---
     const startBtn = document.createElement('button')
-    startBtn.textContent = '시작하기 ▶'
+    startBtn.textContent = '🎮 지금 바로 시작하기'
     startBtn.className = 'relative z-10 px-14 py-5 font-bold text-xl text-white rounded-full active:scale-95 transition-transform'
     startBtn.style.background = 'linear-gradient(135deg, #fbbf24 0%, #f97316 100%)'
     startBtn.style.boxShadow = '0 4px 24px rgba(251,191,36,0.5), 0 0 0 3px rgba(251,191,36,0.2), inset 0 1px 0 rgba(255,255,255,0.3)'
@@ -73,7 +96,7 @@ export class CoverScreen {
 
     // --- 하단 텍스트 ---
     const bottomText = document.createElement('p')
-    bottomText.textContent = '레벨을 클리어하고 도구를 수집하세요!'
+    bottomText.textContent = '두잇 계정 자동 연동 · 로그인 없이'
     bottomText.className = 'relative z-10 text-white/35 text-xs mt-6 tracking-wide'
     container.appendChild(bottomText)
 

@@ -5,8 +5,7 @@ export class GameInfoBar {
   readonly el: HTMLElement
   private movesEl: HTMLElement
   private goalsEl: HTMLElement
-  private scoreEl!: HTMLElement
-  private scoreNumEl!: HTMLElement
+  private wasUrgent = false
 
   constructor() {
     this.el = document.createElement('div')
@@ -30,26 +29,6 @@ export class GameInfoBar {
     this.goalsEl.className = 'flex gap-3 pl-3 border-l border-white/20'
     this.el.appendChild(this.goalsEl)
 
-    this.scoreEl = document.createElement('div')
-    this.scoreEl.className = 'flex flex-col items-center min-w-[48px]'
-    const scoreNum = document.createElement('div')
-    scoreNum.className = 'text-yellow-300 font-bold text-lg text-center'
-    scoreNum.textContent = '0'
-    this.scoreNumEl = scoreNum
-    const scoreLabel = document.createElement('span')
-    scoreLabel.className = 'text-white text-[8px] opacity-60 uppercase tracking-wider'
-    scoreLabel.textContent = '점수'
-    this.scoreEl.appendChild(scoreNum)
-    this.scoreEl.appendChild(scoreLabel)
-    this.el.appendChild(this.scoreEl)
-
-    eventBus.on('game:score-changed', ({ score }) => {
-      this.scoreNumEl.textContent = String(score)
-      this.scoreNumEl.style.animation = 'none'
-      this.scoreNumEl.offsetHeight // force reflow
-      this.scoreNumEl.style.animation = 'score-pop 0.3s ease-out'
-    })
-
     eventBus.on('game:move-used', ({ remaining }) => this.updateMoves(remaining))
     eventBus.on('game:goal-progress', ({ blockType, current, target }) => {
       this.updateGoal(blockType, current, target)
@@ -57,6 +36,7 @@ export class GameInfoBar {
   }
 
   setLevel(moves: number, goals: Map<BlockType, { current: number; target: number }>): void {
+    this.wasUrgent = false
     this.updateMoves(moves)
     this.goalsEl.innerHTML = ''
     for (const [type, goal] of goals) {
@@ -78,9 +58,26 @@ export class GameInfoBar {
 
   updateMoves(remaining: number): void {
     this.movesEl.textContent = String(remaining)
-    this.movesEl.className = remaining <= 3
-      ? 'text-red-400 font-bold text-2xl text-center min-w-[48px] animate-bomb-shake'
-      : 'text-white font-bold text-2xl text-center min-w-[48px]'
+
+    if (remaining <= 3) {
+      this.movesEl.className = 'text-red-400 font-bold text-2xl text-center min-w-[48px] animate-bomb-shake'
+      if (!this.wasUrgent) {
+        this.wasUrgent = true
+        eventBus.emit('game:urgent-mode', { urgent: true })
+      }
+    } else if (remaining <= 5) {
+      this.movesEl.className = 'text-red-400 font-bold text-2xl text-center min-w-[48px] animate-pulse'
+      if (this.wasUrgent) {
+        this.wasUrgent = false
+        eventBus.emit('game:urgent-mode', { urgent: false })
+      }
+    } else {
+      this.movesEl.className = 'text-white font-bold text-2xl text-center min-w-[48px]'
+      if (this.wasUrgent) {
+        this.wasUrgent = false
+        eventBus.emit('game:urgent-mode', { urgent: false })
+      }
+    }
   }
 
   private updateGoal(blockType: BlockType, current: number, target: number): void {

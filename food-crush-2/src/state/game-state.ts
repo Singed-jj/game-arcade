@@ -61,6 +61,22 @@ export class GameState {
     return this.goals
   }
 
+  setRemainingMoves(moves: number): void {
+    this.remainingMoves = moves
+    eventBus.emit('game:move-used', { remaining: this.remainingMoves })
+  }
+
+  setGoalProgress(blockType: BlockType, current: number): void {
+    const goal = this.goals.get(blockType)
+    if (!goal) return
+    goal.current = current
+    eventBus.emit('game:goal-progress', {
+      blockType,
+      current: goal.current,
+      target: goal.target,
+    })
+  }
+
   areAllGoalsMet(): boolean {
     for (const goal of this.goals.values()) {
       if (goal.current < goal.target) return false

@@ -1,189 +1,333 @@
 import { ToolType } from '@/core/types'
+import type { GachaResult, GachaResultType } from '@/core/types'
 import { eventBus } from '@/state/event-bus'
 import type { PieceManager } from '@/state/piece-manager'
 import type { ToolManager } from '@/state/tool-manager'
 
-const GACHA_POOL: { type: ToolType; weight: number }[] = [
-  { type: ToolType.ROCKET, weight: 40 },
-  { type: ToolType.BOMB, weight: 35 },
-  { type: ToolType.RAINBOW, weight: 25 },
-]
+/** 릴 아이템 배열 (반복 순환) */
+const REEL_ITEMS = ['🚀', '💣', '🎟', '🚀', '🍗', '💣', '🌈']
 
-const RARITY: Record<ToolType, { label: string; emoji: string; name: string; color: string; glow: string; stars: number }> = {
-  [ToolType.ROCKET]: {
-    label: 'COMMON',
-    emoji: '🚀',
-    name: '로켓',
-    color: 'from-blue-500 to-cyan-400',
-    glow: 'rgba(59,130,246,0.6)',
-    stars: 2,
-  },
-  [ToolType.BOMB]: {
-    label: 'RARE',
-    emoji: '💣',
-    name: '폭탄',
-    color: 'from-orange-500 to-red-400',
-    glow: 'rgba(249,115,22,0.6)',
-    stars: 3,
-  },
-  [ToolType.RAINBOW]: {
-    label: 'EPIC',
-    emoji: '🌈',
-    name: '무지개',
-    color: 'from-purple-500 to-pink-400',
-    glow: 'rgba(168,85,247,0.6)',
-    stars: 5,
-  },
+/** GachaResultType -> 릴에서 정지할 이모지 */
+function getTargetEmoji(result: GachaResult): string {
+  switch (result.type) {
+    case 'tool1':
+      return result.tools?.[0] === 'BOMB' ? '💣' : '🚀'
+    case 'tool3':
+      return '🎟'
+    case 'coupon1000':
+    case 'coupon2000':
+      return '🎟'
+    case 'chicken':
+      return '🍗'
+  }
+}
+
+/** 릴 셀 높이 */
+const CELL_HEIGHT = 60
+/** 보이는 영역 높이 */
+const VISIBLE_HEIGHT = 288
+
+function showToast(msg: string): void {
+  const t = document.createElement('div')
+  t.textContent = msg
+  Object.assign(t.style, {
+    position: 'fixed', bottom: '80px', left: '50%',
+    transform: 'translateX(-50%)',
+    background: 'rgba(0,0,0,0.85)', color: 'white',
+    padding: '8px 16px', borderRadius: '8px',
+    fontSize: '13px', zIndex: '9999',
+  })
+  document.body.appendChild(t)
+  setTimeout(() => t.remove(), 2000)
 }
 
 export class GachaScreen {
   constructor(container: HTMLElement, pieceManager: PieceManager, toolManager: ToolManager) {
-    container.className = 'relative w-full h-dvh max-w-[375px] mx-auto flex flex-col items-center justify-center overflow-hidden'
+    container.className = 'relative w-full h-dvh max-w-[375px] mx-auto flex flex-col items-center overflow-hidden'
     container.style.background = 'linear-gradient(180deg, #1a0533 0%, #0E0A28 100%)'
 
-    if (!pieceManager.useForGacha()) {
+    const result = pieceManager.useForGacha()
+    if (!result) {
       eventBus.emit('screen:change', { screen: 'map' })
       return
     }
 
-    const roll = Math.random() * 100
-    let cumulative = 0
-    let result = GACHA_POOL[0].type
-    for (const item of GACHA_POOL) {
-      cumulative += item.weight
-      if (roll < cumulative) { result = item.type; break }
-    }
+    this.injectStyles()
+    this.buildReelScreen(container, result, toolManager)
+  }
 
-    toolManager.addTool(result)
-    const rarity = RARITY[result]
+  private buildReelScreen(container: HTMLElement, result: GachaResult, toolManager: ToolManager): void {
+    // ── 마스콧 + 타이틀 ──
+    const header = document.createElement('div')
+    header.className = 'flex items-center gap-2 mt-12 mb-6'
+    header.innerHTML = '<span style="font-size:40px">🐥</span><span class="text-white text-lg font-bold">두근두근... 뭐가 나올까?</span>'
+    container.appendChild(header)
 
-    // Background sparkles
-    const sparkleContainer = document.createElement('div')
-    sparkleContainer.className = 'absolute inset-0 pointer-events-none'
-    for (let i = 0; i < 20; i++) {
-      const spark = document.createElement('div')
-      const size = 2 + Math.random() * 4
-      spark.style.cssText = `
-        position: absolute;
-        width: ${size}px; height: ${size}px;
-        border-radius: 50%;
-        background: white;
-        left: ${Math.random() * 100}%;
-        top: ${Math.random() * 100}%;
-        opacity: 0;
-        animation: sparkle-float ${1.5 + Math.random() * 2}s ${Math.random() * 2}s infinite ease-in-out;
-      `
-      sparkleContainer.appendChild(spark)
-    }
-    container.appendChild(sparkleContainer)
-
-    const title = document.createElement('h2')
-    title.textContent = '뽑기!'
-    title.className = 'text-3xl font-bold text-purple-300 mb-8 opacity-0'
-    title.style.animation = 'fade-in-up 0.5s 0.2s forwards'
-    container.appendChild(title)
-
-    // Mystery box phase → reveal phase
-    const boxWrapper = document.createElement('div')
-    boxWrapper.className = 'relative flex flex-col items-center'
-
-    const mysteryBox = document.createElement('div')
-    mysteryBox.className = 'w-36 h-36 rounded-3xl flex items-center justify-center text-7xl mb-2'
-    mysteryBox.style.cssText = `
-      background: linear-gradient(135deg, #4c1d95, #7c3aed);
-      box-shadow: 0 0 30px rgba(124,58,237,0.5);
-      animation: mystery-shake 0.3s 0.5s 4 ease-in-out;
+    // ── 릴 영역 ──
+    const reelWrapper = document.createElement('div')
+    reelWrapper.className = 'relative'
+    reelWrapper.style.cssText = `
+      width: calc(100% - 48px);
+      height: ${VISIBLE_HEIGHT}px;
+      overflow: hidden;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
     `
-    mysteryBox.textContent = '❓'
 
-    const gradientColors: Record<ToolType, string> = {
-      [ToolType.ROCKET]: 'linear-gradient(135deg, #3b82f6, #22d3ee)',
-      [ToolType.BOMB]: 'linear-gradient(135deg, #f97316, #ef4444)',
-      [ToolType.RAINBOW]: 'linear-gradient(135deg, #a855f7, #ec4899)',
-    }
-    const resultBox = document.createElement('div')
-    resultBox.className = 'w-36 h-36 rounded-3xl flex items-center justify-center text-7xl mb-2 hidden'
-    resultBox.style.background = gradientColors[result]
-    resultBox.style.boxShadow = `0 0 40px ${rarity.glow}, inset 0 1px 0 rgba(255,255,255,0.3)`
-    resultBox.textContent = rarity.emoji
+    // 릴 스트립
+    const reelStrip = document.createElement('div')
+    reelStrip.style.cssText = 'position: absolute; left: 0; right: 0; will-change: transform;'
 
-    boxWrapper.appendChild(mysteryBox)
-    boxWrapper.appendChild(resultBox)
-    container.appendChild(boxWrapper)
-
-    // Rarity badge (hidden initially)
-    const rarityBadge = document.createElement('div')
-    rarityBadge.textContent = rarity.label
-    rarityBadge.className = `text-xs font-bold tracking-widest px-3 py-1 rounded-full mb-2 opacity-0 bg-gradient-to-r ${rarity.color} text-white`
-    container.appendChild(rarityBadge)
-
-    // Stars row (hidden initially)
-    const starsRow = document.createElement('div')
-    starsRow.className = 'flex gap-1 mb-4 opacity-0'
-    for (let i = 0; i < 5; i++) {
-      const s = document.createElement('span')
-      s.textContent = i < rarity.stars ? '⭐' : '☆'
-      s.className = i < rarity.stars ? 'text-lg' : 'text-lg opacity-20'
-      starsRow.appendChild(s)
-    }
-    container.appendChild(starsRow)
-
-    const resultLabel = document.createElement('p')
-    resultLabel.className = 'text-white font-bold text-2xl mb-8 opacity-0'
-    resultLabel.textContent = `${rarity.name} 획득!`
-    container.appendChild(resultLabel)
-
-    const okBtn = document.createElement('button')
-    okBtn.textContent = '확인'
-    okBtn.className = 'px-12 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold rounded-full text-lg shadow-lg active:scale-95 transition-transform opacity-0'
-    okBtn.addEventListener('click', () => {
-      eventBus.emit('screen:change', { screen: 'map' })
-    })
-    container.appendChild(okBtn)
-
-    // Inject CSS animations
-    if (!document.getElementById('gacha-styles')) {
-      const style = document.createElement('style')
-      style.id = 'gacha-styles'
-      style.textContent = `
-        @keyframes mystery-shake {
-          0%, 100% { transform: rotate(0deg) scale(1); }
-          25% { transform: rotate(-8deg) scale(1.05); }
-          75% { transform: rotate(8deg) scale(1.05); }
-        }
-        @keyframes reveal-pop {
-          0% { transform: scale(0) rotate(-10deg); opacity: 0; }
-          70% { transform: scale(1.2) rotate(3deg); opacity: 1; }
-          100% { transform: scale(1) rotate(0deg); opacity: 1; }
-        }
-        @keyframes sparkle-float {
-          0%, 100% { opacity: 0; transform: translateY(0) scale(0.5); }
-          50% { opacity: 0.8; transform: translateY(-20px) scale(1); }
-        }
-        @keyframes fade-in-up {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes badge-appear {
-          from { opacity: 0; transform: scale(0.8); }
-          to { opacity: 1; transform: scale(1); }
-        }
+    // 릴 아이템 충분히 반복 (70개)
+    const totalCells = REEL_ITEMS.length * 10
+    for (let i = 0; i < totalCells; i++) {
+      const cell = document.createElement('div')
+      cell.style.cssText = `
+        height: ${CELL_HEIGHT}px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 36px;
+        color: white;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
       `
-      document.head.appendChild(style)
+      cell.textContent = REEL_ITEMS[i % REEL_ITEMS.length]
+      reelStrip.appendChild(cell)
+    }
+    reelWrapper.appendChild(reelStrip)
+
+    // ── 하이라이트 프레임 (정중앙) ──
+    const highlightY = (VISIBLE_HEIGHT - CELL_HEIGHT) / 2
+    const highlight = document.createElement('div')
+    highlight.style.cssText = `
+      position: absolute;
+      left: 8px; right: 8px;
+      top: ${highlightY}px;
+      height: ${CELL_HEIGHT}px;
+      border: 2px solid #FFD700;
+      border-radius: 8px;
+      background: rgba(255,215,0,0.08);
+      pointer-events: none;
+      z-index: 2;
+    `
+    reelWrapper.appendChild(highlight)
+
+    // 상단/하단 그라데이션 페이드
+    const fadeTop = document.createElement('div')
+    fadeTop.style.cssText = 'position:absolute;top:0;left:0;right:0;height:60px;background:linear-gradient(180deg,#1a0533,transparent);pointer-events:none;z-index:1;'
+    const fadeBottom = document.createElement('div')
+    fadeBottom.style.cssText = 'position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(0deg,#0E0A28,transparent);pointer-events:none;z-index:1;'
+    reelWrapper.appendChild(fadeTop)
+    reelWrapper.appendChild(fadeBottom)
+
+    container.appendChild(reelWrapper)
+
+    // ── 결과 오버레이 (처음에 숨김) ──
+    const resultOverlay = document.createElement('div')
+    resultOverlay.style.cssText = `
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(14,10,40,0.95);
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      pointer-events: none;
+      z-index: 10;
+      padding: 24px;
+    `
+    container.appendChild(resultOverlay)
+
+    // ── 릴 애니메이션 시작 ──
+    this.animateReel(reelStrip, result, toolManager, resultOverlay)
+  }
+
+  private animateReel(
+    reelStrip: HTMLElement,
+    result: GachaResult,
+    toolManager: ToolManager,
+    resultOverlay: HTMLElement,
+  ): void {
+    const targetEmoji = getTargetEmoji(result)
+    // 릴 배열에서 targetEmoji 위치 찾기
+    let targetIndexInReel = REEL_ITEMS.indexOf(targetEmoji)
+    if (targetIndexInReel < 0) targetIndexInReel = 0
+
+    // 하이라이트 프레임 중앙 Y 좌표
+    const highlightCenterY = (VISIBLE_HEIGHT - CELL_HEIGHT) / 2
+
+    // 5바퀴 + 타겟 인덱스
+    const fullRotations = 5
+    let finalCellIndex = fullRotations * REEL_ITEMS.length + targetIndexInReel
+
+    // ── Near-miss 로직 (30% 확률) ──
+    // 결과가 치킨이 아닐 때, 30%로 🍗가 하이라이트 직전/직후 셀에 오도록 조정
+    if (result.type !== 'chicken' && Math.random() < 0.3) {
+      const chickenIdx = REEL_ITEMS.indexOf('🍗') // 4
+      const direction = Math.random() < 0.5 ? 1 : -1
+      // 치킨이 하이라이트 기준 direction 위치에 오려면:
+      // 중앙 셀 = finalCellIndex, 치킨 = finalCellIndex + direction
+      // 즉 finalCellIndex + direction 위치의 릴 아이템이 🍗여야 함
+      // (finalCellIndex + direction) % REEL_ITEMS.length === chickenIdx
+      // finalCellIndex = chickenIdx - direction (mod REEL_ITEMS.length) + fullRotations * REEL_ITEMS.length
+      const nearMissCenter = ((chickenIdx - direction) % REEL_ITEMS.length + REEL_ITEMS.length) % REEL_ITEMS.length
+      // 중앙 셀의 이모지가 원래 targetEmoji와 같은지 확인
+      if (REEL_ITEMS[nearMissCenter] === targetEmoji) {
+        finalCellIndex = fullRotations * REEL_ITEMS.length + nearMissCenter
+      }
     }
 
-    // Reveal sequence after shake animation (4 * 0.3s + 0.5s delay = 1.7s)
-    setTimeout(() => {
-      mysteryBox.classList.add('hidden')
-      resultBox.classList.remove('hidden')
-      resultBox.style.animation = 'reveal-pop 0.5s ease-out forwards'
+    // 최종 Y 위치: finalCellIndex 셀이 하이라이트 중앙에 오도록
+    const finalY = -(finalCellIndex * CELL_HEIGHT - highlightCenterY)
 
-      setTimeout(() => {
-        rarityBadge.style.animation = 'badge-appear 0.3s ease-out forwards'
-        starsRow.style.animation = 'badge-appear 0.3s 0.1s ease-out forwards'
-        resultLabel.style.animation = 'badge-appear 0.3s 0.2s ease-out forwards'
-        okBtn.style.animation = 'badge-appear 0.3s 0.4s ease-out forwards'
-      }, 400)
-    }, 1700)
+    // 애니메이션 타이밍
+    const FAST_DURATION = 1500   // 0~1.5초: 빠른 스크롤
+    const SLOW_DURATION = 1500   // 1.5~3.0초: 감속
+    const TOTAL_DURATION = FAST_DURATION + SLOW_DURATION
+    const PAUSE_BEFORE_RESULT = 1000 // 정지 후 1초 대기
+
+    // 빠른 스크롤 단계 종료 지점 (전체 거리의 ~70%)
+    const totalDistance = Math.abs(finalY)
+    const fastEndY = -(totalDistance * 0.7)
+
+    const startTime = performance.now()
+
+    const animate = (now: number) => {
+      const elapsed = now - startTime
+
+      let currentY: number
+
+      if (elapsed < FAST_DURATION) {
+        // Phase 1: 빠른 스크롤 (linear)
+        const progress = elapsed / FAST_DURATION
+        currentY = fastEndY * progress
+      } else if (elapsed < TOTAL_DURATION) {
+        // Phase 2: 감속 (easeOutCubic)
+        const slowElapsed = elapsed - FAST_DURATION
+        const progress = slowElapsed / SLOW_DURATION
+        const eased = 1 - Math.pow(1 - progress, 3)
+        currentY = fastEndY + (finalY - fastEndY) * eased
+      } else {
+        // 정지
+        reelStrip.style.transform = `translateY(${finalY}px)`
+
+        setTimeout(() => {
+          this.showResult(resultOverlay, result, toolManager)
+        }, PAUSE_BEFORE_RESULT)
+        return
+      }
+
+      reelStrip.style.transform = `translateY(${currentY}px)`
+      requestAnimationFrame(animate)
+    }
+
+    requestAnimationFrame(animate)
+  }
+
+  private showResult(overlay: HTMLElement, result: GachaResult, toolManager: ToolManager): void {
+    overlay.innerHTML = ''
+    overlay.style.opacity = '1'
+    overlay.style.pointerEvents = 'auto'
+
+    const rocketCount = toolManager.getCount(ToolType.ROCKET)
+    const bombCount = toolManager.getCount(ToolType.BOMB)
+    const rainbowCount = toolManager.getCount(ToolType.RAINBOW)
+    const inventoryLine = `현재 보유: 🚀\u00D7${rocketCount}  💣\u00D7${bombCount}  🌈\u00D7${rainbowCount}`
+
+    switch (result.type) {
+      case 'tool1': {
+        const isBomb = result.tools?.[0] === 'BOMB'
+        const toolEmoji = isBomb ? '💣' : '🚀'
+        const toolName = isBomb ? '폭탄' : '로켓'
+        const desc = isBomb
+          ? '주변 3\u00D73 블록을 한 번에 제거해요!'
+          : '가로 또는 세로 한 줄을 한 번에 제거해요!'
+        this.addText(overlay, `${toolEmoji} ${toolName} 획득!`, 'text-2xl font-bold text-white mb-2')
+        this.addText(overlay, desc, 'text-sm text-gray-300 mb-4')
+        this.addText(overlay, inventoryLine, 'text-sm text-yellow-300 mb-8')
+        this.addButton(overlay, '확인', () => {
+          eventBus.emit('screen:change', { screen: 'map' })
+        })
+        break
+      }
+      case 'tool3': {
+        this.addText(overlay, '🎰 대박! 도구 3개 획득!', 'text-2xl font-bold text-white mb-2')
+        this.addText(overlay, '🚀\u00D71  💣\u00D71  🌈\u00D71', 'text-lg text-white mb-4')
+        this.addText(overlay, inventoryLine, 'text-sm text-yellow-300 mb-8')
+        this.addButton(overlay, '확인', () => {
+          eventBus.emit('screen:change', { screen: 'map' })
+        })
+        break
+      }
+      case 'coupon1000': {
+        this.buildCouponResult(overlay, '1,000원 할인 쿠폰')
+        break
+      }
+      case 'coupon2000': {
+        this.buildCouponResult(overlay, '2,000원 할인 쿠폰')
+        break
+      }
+      case 'chicken': {
+        this.addText(overlay, '🍗 1인 치킨 당첨!!!', 'text-2xl font-bold text-white mb-2')
+        this.addText(overlay, '1인 치킨 쿠폰 (10,000원 상당)', 'text-base text-white mb-1')
+        this.addText(overlay, '두잇 앱 주문 시 사용 \u00B7 \u23F0 24시간 유효', 'text-sm text-gray-400 mb-6')
+        this.addButton(overlay, '🛒 지금 바로 주문하기', () => {
+          showToast('현재 구현중인 화면입니다')
+        }, 'from-yellow-500 to-orange-500')
+        this.addButton(overlay, '나중에 쓸게요', () => {
+          eventBus.emit('screen:change', { screen: 'map' })
+        }, 'from-gray-600 to-gray-700', 'mt-3')
+        break
+      }
+    }
+  }
+
+  private buildCouponResult(overlay: HTMLElement, couponName: string): void {
+    this.addText(overlay, '🎉 축하해요!', 'text-2xl font-bold text-white mb-2')
+    this.addText(overlay, couponName, 'text-xl font-bold text-yellow-300 mb-1')
+    this.addText(overlay, '두잇 앱 주문 시 사용 \u00B7 \u23F0 24시간 유효', 'text-sm text-gray-400 mb-6')
+    this.addButton(overlay, '🛒 지금 바로 주문하기', () => {
+      showToast('현재 구현중인 화면입니다')
+    }, 'from-yellow-500 to-orange-500')
+    this.addButton(overlay, '나중에 쓸게요', () => {
+      eventBus.emit('screen:change', { screen: 'map' })
+    }, 'from-gray-600 to-gray-700', 'mt-3')
+  }
+
+  private addText(parent: HTMLElement, text: string, className: string): void {
+    const el = document.createElement('div')
+    el.textContent = text
+    el.className = className
+    parent.appendChild(el)
+  }
+
+  private addButton(
+    parent: HTMLElement,
+    text: string,
+    onClick: () => void,
+    gradient = 'from-purple-500 to-pink-500',
+    extraClass = '',
+  ): void {
+    const btn = document.createElement('button')
+    btn.textContent = text
+    btn.className = `w-64 py-3 bg-gradient-to-r ${gradient} text-white font-bold rounded-full text-base shadow-lg active:scale-95 transition-transform ${extraClass}`
+    btn.addEventListener('click', onClick)
+    parent.appendChild(btn)
+  }
+
+  private injectStyles(): void {
+    if (document.getElementById('gacha-styles')) return
+    const style = document.createElement('style')
+    style.id = 'gacha-styles'
+    style.textContent = `
+      @keyframes gacha-fade-in {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+    `
+    document.head.appendChild(style)
   }
 }

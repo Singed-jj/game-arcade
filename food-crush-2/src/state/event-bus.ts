@@ -29,6 +29,7 @@ export interface GameEventMap {
   'game:level-complete': { stars: number; movesLeft: number }
   'game:level-failed': void
   'game:score-changed': { score: number; delta: number }
+  'game:urgent-mode': { urgent: boolean }
 
   // 하트 이벤트
   'heart:changed': { current: number; max: number }
