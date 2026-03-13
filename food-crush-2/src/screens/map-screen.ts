@@ -86,11 +86,7 @@ export class MapScreen {
       if (isUnlocked) {
         node.addEventListener('click', () => {
           if (heartManager.getHearts() <= 0) {
-            const toast = document.createElement('div')
-            toast.textContent = '하트가 없어요! 💔'
-            toast.className = 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/80 text-white px-6 py-3 rounded-full text-sm font-bold z-50'
-            document.body.appendChild(toast)
-            setTimeout(() => toast.remove(), 2000)
+            eventBus.emit('screen:change', { screen: 'no-hearts' })
             return
           }
           eventBus.emit('screen:change', { screen: 'game', data: { level } })

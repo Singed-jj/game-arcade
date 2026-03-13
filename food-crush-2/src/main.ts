@@ -12,6 +12,7 @@ import { ClearScreen } from '@/screens/clear-screen'
 import { FailScreen } from '@/screens/fail-screen'
 import { GachaScreen } from '@/screens/gacha-screen'
 import { InventoryScreen } from '@/screens/inventory-screen'
+import { NoHeartsScreen } from '@/screens/no-hearts-screen'
 import { TickerBanner } from '@/ui/ticker-banner'
 import { soundManager } from '@/audio/sound-manager'
 
@@ -91,6 +92,9 @@ class App {
         break
       case 'inventory':
         new InventoryScreen(this.app, this.toolManager)
+        break
+      case 'no-hearts':
+        new NoHeartsScreen(this.app, this.heartManager)
         break
     }
   }
