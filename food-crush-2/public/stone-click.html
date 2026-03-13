@@ -289,7 +289,7 @@ btnSave.addEventListener('click', async () => {
     // 기본적으로 클립보드 복사 후 수동 붙여넣기 안내
     await navigator.clipboard.writeText(json);
     statusEl.className = 'done';
-    statusEl.textContent = '📋 JSON 클립보드 복사 완료! public/assets/data/stone-map.json 에 붙여넣으세요.';
+    statusEl.textContent = '📋 JSON 클립보드 복사 완료! src/assets/data/stone-map.json 에 붙여넣으세요.';
   } catch {
     alert('클립보드 복사에 실패했습니다. 아래 JSON을 수동으로 복사하세요.');
   }
