@@ -41,4 +41,4 @@ Match-3 음식 퍼즐 게임. TypeScript + Tailwind CSS 웹 앱.
 |------|------|---------|
 | `docs/food-crush-wireframe.html` | 화면별 UI/UX 와이어프레임 | 화면 레이아웃, UI 컴포넌트 추가/수정 |
 | `docs/food-crush-level.html` | 레벨 설계 스펙 (목표, 이동수, 난이도) | 레벨 데이터, 밸런스 조정 |
-| `docs/food-crush-assets.html` | 에셋 목록 및 스펙 | 블록 타입, 이미지, 사운드, 이펙트 |
+| `docs/food-crush-assets-and-effects.html` | 에셋 목록 및 스펙, 이펙트/애니메이션 CSS | 블록 타입, 이미지, 사운드, 이펙트 |

@@ -10,6 +10,7 @@ export class BoardRenderer {
   private selectedPos: Position | null = null
   private inputLocked = false
   private toolMode = false
+  private cachedRect: DOMRect | null = null
 
   constructor(container: HTMLElement) {
     this.container = container
@@ -23,6 +24,7 @@ export class BoardRenderer {
     this.boardEl.style.boxShadow = '0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)'
     this.boardEl.style.backgroundImage = `repeating-linear-gradient(0deg, transparent, transparent ${CELL_SIZE - 1}px, rgba(255,255,255,0.10) ${CELL_SIZE - 1}px, rgba(255,255,255,0.10) ${CELL_SIZE}px), repeating-linear-gradient(90deg, transparent, transparent ${CELL_SIZE - 1}px, rgba(255,255,255,0.10) ${CELL_SIZE - 1}px, rgba(255,255,255,0.10) ${CELL_SIZE}px)`
     container.appendChild(this.boardEl)
+    window.addEventListener('resize', () => { this.cachedRect = null })
     this.setupInput()
   }
 
@@ -65,27 +67,49 @@ export class BoardRenderer {
 
   private setupInput(): void {
     let startPos: Position | null = null
+    let startPixel: { x: number; y: number } | null = null
+    let swapFired = false
+    const SWIPE_THRESHOLD = CELL_SIZE / 3  // ~15px
 
     this.boardEl.addEventListener('pointerdown', (e) => {
       if (this.inputLocked) return
       startPos = this.posFromEvent(e)
+      startPixel = { x: e.clientX, y: e.clientY }
+      swapFired = false
+      this.boardEl.setPointerCapture(e.pointerId)
     })
 
-    this.boardEl.addEventListener('pointerup', (e) => {
-      if (this.inputLocked || !startPos) return
-      const endPos = this.posFromEvent(e)
-      if (!endPos) { startPos = null; return }
+    this.boardEl.addEventListener('pointermove', (e) => {
+      if (this.inputLocked || !startPos || !startPixel || swapFired) return
+      const dx = e.clientX - startPixel.x
+      const dy = e.clientY - startPixel.y
 
-      const dx = endPos.col - startPos.col
-      const dy = endPos.row - startPos.row
+      let direction: Position | null = null
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > SWIPE_THRESHOLD) {
+        direction = { col: startPos.col + Math.sign(dx), row: startPos.row }
+      } else if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > SWIPE_THRESHOLD) {
+        direction = { col: startPos.col, row: startPos.row + Math.sign(dy) }
+      }
 
-      if (Math.abs(dx) + Math.abs(dy) === 1) {
+      if (direction && direction.col >= 0 && direction.col < BOARD_COLS &&
+          direction.row >= 0 && direction.row < BOARD_ROWS) {
+        swapFired = true
         if (this.toolMode) {
           eventBus.emit('board:cell-tapped', { col: startPos.col, row: startPos.row })
         } else {
-          eventBus.emit('board:swap-requested', { from: startPos, to: endPos })
+          eventBus.emit('board:swap-requested', { from: startPos, to: direction })
         }
-      } else if (dx === 0 && dy === 0) {
+        startPos = null
+      }
+    })
+
+    this.boardEl.addEventListener('pointerup', (e) => {
+      if (this.inputLocked) { startPos = null; return }
+      if (!startPos || swapFired) { startPos = null; return }
+
+      const endPos = this.posFromEvent(e)
+      if (endPos && endPos.col === startPos.col && endPos.row === startPos.row) {
+        // tap
         eventBus.emit('board:cell-tapped', { col: endPos.col, row: endPos.row })
         if (!this.toolMode) {
           if (this.selectedPos) {
@@ -104,10 +128,17 @@ export class BoardRenderer {
       }
       startPos = null
     })
+
+    this.boardEl.addEventListener('pointercancel', () => {
+      startPos = null
+      startPixel = null
+      swapFired = false
+    })
   }
 
   private posFromEvent(e: PointerEvent): Position | null {
-    const rect = this.boardEl.getBoundingClientRect()
+    if (!this.cachedRect) this.cachedRect = this.boardEl.getBoundingClientRect()
+    const rect = this.cachedRect
     const col = Math.floor((e.clientX - rect.left) / CELL_SIZE)
     const row = Math.floor((e.clientY - rect.top) / CELL_SIZE)
     if (col < 0 || col >= BOARD_COLS || row < 0 || row >= BOARD_ROWS) return null

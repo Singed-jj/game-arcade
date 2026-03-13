@@ -6,12 +6,16 @@ export class BlockView {
 
   constructor(public blockType: BlockType, public pos: Position) {
     this.el = document.createElement('div')
-    this.el.className = 'absolute transition-all duration-150 ease-out rounded-xl shadow-lg flex items-center justify-center'
+    this.el.className = 'absolute transition-transform duration-150 ease-out rounded-xl shadow-lg flex items-center justify-center'
     this.el.style.width = `${CELL_SIZE - 6}px`
     this.el.style.height = `${CELL_SIZE - 6}px`
     this.el.style.background = BLOCK_GRADIENTS[blockType]
     this.el.style.border = '1.5px solid rgba(255,255,255,0.4)'
     this.el.style.boxShadow = '0 3px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.45), inset 0 -1px 0 rgba(0,0,0,0.2)'
+    this.el.style.willChange = 'transform'
+    this.el.style.contain = 'layout style'
+    this.el.style.left = '0'
+    this.el.style.top = '0'
     this.updatePosition()
 
     // 광택 하이라이트 (3D 느낌)
@@ -31,8 +35,11 @@ export class BlockView {
   }
 
   updatePosition(): void {
-    this.el.style.left = `${this.pos.col * CELL_SIZE + 3}px`
-    this.el.style.top = `${this.pos.row * CELL_SIZE + 3}px`
+    const x = this.pos.col * CELL_SIZE + 3
+    const y = this.pos.row * CELL_SIZE + 3
+    this.el.style.setProperty('--block-x', `${x}px`)
+    this.el.style.setProperty('--block-y', `${y}px`)
+    this.el.style.transform = `translate(${x}px, ${y}px)`
   }
 
   animatePop(): Promise<void> {
@@ -47,6 +54,10 @@ export class BlockView {
 
   animateDrop(fromRow: number): Promise<void> {
     const distance = (this.pos.row - fromRow) * CELL_SIZE
+    const x = this.pos.col * CELL_SIZE + 3
+    const y = this.pos.row * CELL_SIZE + 3
+    this.el.style.setProperty('--block-x', `${x}px`)
+    this.el.style.setProperty('--block-y', `${y}px`)
     this.el.style.setProperty('--drop-distance', `-${distance}px`)
     this.el.classList.add('animate-block-drop')
     return new Promise(resolve => {
@@ -72,11 +83,8 @@ export class BlockView {
   setSelected(selected: boolean): void {
     this.el.style.outline = selected ? '3px solid rgba(255,255,255,0.9)' : ''
     this.el.style.outlineOffset = '1px'
-    this.el.style.transform = selected ? 'scale(1.12)' : ''
     this.el.style.zIndex = selected ? '10' : ''
-    this.el.style.boxShadow = selected
-      ? '0 4px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.5)'
-      : '0 2px 6px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.35)'
+    this.el.style.filter = selected ? 'brightness(1.3)' : ''
   }
 
   destroy(): void { this.el.remove() }

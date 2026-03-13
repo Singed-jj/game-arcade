@@ -2,18 +2,18 @@
 
 /* 커스텀 CSS 애니메이션 — assets.html 스펙 참조 */
 @keyframes block-pop {
-  0%   { transform: scale(1);   opacity: 1; }
-  30%  { transform: scale(1.2); opacity: 1; }
-  100% { transform: scale(0);   opacity: 0; }
+  0%   { transform: translate(var(--block-x), var(--block-y)) scale(1);   opacity: 1; }
+  30%  { transform: translate(var(--block-x), var(--block-y)) scale(1.2); opacity: 1; }
+  100% { transform: translate(var(--block-x), var(--block-y)) scale(0);   opacity: 0; }
 }
 
 @keyframes block-drop {
-  0%   { transform: translateY(var(--drop-distance)); }
-  70%  { transform: translateY(0px); }
-  80%  { transform: translateY(-4px); }
-  90%  { transform: translateY(0px); }
-  95%  { transform: translateY(-1px); }
-  100% { transform: translateY(0px); }
+  0%   { transform: translate(var(--block-x), calc(var(--block-y) + var(--drop-distance))); }
+  70%  { transform: translate(var(--block-x), var(--block-y)); }
+  80%  { transform: translate(var(--block-x), calc(var(--block-y) - 4px)); }
+  90%  { transform: translate(var(--block-x), var(--block-y)); }
+  95%  { transform: translate(var(--block-x), calc(var(--block-y) - 1px)); }
+  100% { transform: translate(var(--block-x), var(--block-y)); }
 }
 
 @keyframes score-float {
@@ -36,14 +36,14 @@
 }
 
 @keyframes hint-wobble {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-3px); }
+  0%, 100% { transform: translate(var(--block-x), var(--block-y)); }
+  50%      { transform: translate(var(--block-x), calc(var(--block-y) - 3px)); }
 }
 
 @keyframes bomb-shake {
-  0%, 100% { transform: translateX(0); }
-  25%      { transform: translateX(-3px); }
-  75%      { transform: translateX(3px); }
+  0%, 100% { transform: translate(var(--block-x), var(--block-y)); }
+  25%      { transform: translate(calc(var(--block-x) - 3px), var(--block-y)); }
+  75%      { transform: translate(calc(var(--block-x) + 3px), var(--block-y)); }
 }
 
 @keyframes bg-flash {
@@ -67,10 +67,10 @@
 .animate-glow { animation: glow-pulse 1.4s ease-in-out infinite; }
 
 @keyframes block-spawn {
-  0%   { transform: scale(0.4) translateY(-8px); opacity: 0; }
-  60%  { transform: scale(1.08) translateY(2px); opacity: 1; }
-  80%  { transform: scale(0.96) translateY(0); }
-  100% { transform: scale(1) translateY(0); opacity: 1; }
+  0%   { transform: translate(var(--block-x), calc(var(--block-y) - 8px)) scale(0.4); opacity: 0; }
+  60%  { transform: translate(var(--block-x), calc(var(--block-y) + 2px)) scale(1.08); opacity: 1; }
+  80%  { transform: translate(var(--block-x), var(--block-y)) scale(0.96); }
+  100% { transform: translate(var(--block-x), var(--block-y)) scale(1); opacity: 1; }
 }
 .animate-block-spawn { animation: block-spawn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 

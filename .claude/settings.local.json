@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(vercel ls:*)",
+      "Bash(vercel project:*)",
+      "Read(//Users/jaejin/.local/share/com.vercel.cli/**)",
+      "Read(//Users/jaejin/.config/vercel/**)",
+      "Bash(vercel --version 2>/dev/null || echo \"vercel not found\")",
+      "Bash(vercel whoami:*)",
+      "Bash(cd /Users/jaejin/projects/toy/game-arcade ; VERCEL_ORG_ID=team_w8kyxaoSa4SU7lqxh3Tsry48 VERCEL_PROJECT_ID=prj_ZzGDv6WlW21jnF4hgcQyuTLdJV2y vercel pull --yes --environment=production --cwd food-crush-2/ 2>&1)",
+      "Bash(cd /Users/jaejin/projects/toy/game-arcade ; VERCEL_ORG_ID=team_w8kyxaoSa4SU7lqxh3Tsry48 VERCEL_PROJECT_ID=prj_ZzGDv6WlW21jnF4hgcQyuTLdJV2y vercel deploy --prod --yes --cwd food-crush-2/ 2>&1)"
+    ]
+  }
+}
