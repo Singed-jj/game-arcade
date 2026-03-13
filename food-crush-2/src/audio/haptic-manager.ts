@@ -6,18 +6,18 @@ export type HapticEvent =
   | 'clear' | 'fail' | 'star'
 
 const VIBRATION_PATTERNS: Record<HapticEvent, number | number[]> = {
-  swap:         10,
-  wrongSwap:    [10, 50, 10],
-  match:        15,
-  cascade2:     20,
-  cascade3:     [15, 30, 25],
-  cascade4plus: [15, 20, 15, 20, 30],
-  rocket:       [10, 10, 10, 10, 10, 10, 50],
-  bomb:         [30, 0, 50],
-  rainbow:      [10, 20, 10, 20, 10, 20, 80],
-  clear:        [30, 50, 30, 50, 100],
-  fail:         [50, 100, 30],
-  star:         20,
+  swap:         30,
+  wrongSwap:    [30, 60, 30],
+  match:        30,
+  cascade2:     40,
+  cascade3:     [30, 40, 40],
+  cascade4plus: [30, 20, 30, 20, 50],
+  rocket:       [30, 15, 30, 15, 30, 15, 80],
+  bomb:         [50, 0, 80],
+  rainbow:      [30, 20, 30, 20, 30, 20, 100],
+  clear:        [50, 60, 50, 60, 120],
+  fail:         [80, 120, 50],
+  star:         40,
 }
 
 const IOS_HAPTIC_MAP: Record<HapticEvent, string> = {
@@ -48,7 +48,10 @@ export class HapticManager {
 
     // Web Vibration API (Android)
     if (navigator.vibrate) {
-      navigator.vibrate(VIBRATION_PATTERNS[event])
+      const result = navigator.vibrate(VIBRATION_PATTERNS[event])
+      console.debug(`[haptic] ${event} → vibrate() = ${result}`)
+    } else {
+      console.debug('[haptic] navigator.vibrate not available')
     }
   }
 
