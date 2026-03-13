@@ -1,0 +1,41 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Food Crush 3"
+config/description="Match-3 food puzzle game"
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+config/icon="res://assets/blocks/chicken.png"
+
+[display]
+
+window/size/viewport_width=390
+window/size/viewport_height=844
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+window/handheld/orientation=1
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+
+[autoload]
+
+EventBus="*res://scripts/autoload/event_bus.gd"
+SaveManager="*res://scripts/autoload/save_manager.gd"
+GameState="*res://scripts/autoload/game_state.gd"
+HeartManager="*res://scripts/autoload/heart_manager.gd"
+ToolManager="*res://scripts/autoload/tool_manager.gd"
+PieceManager="*res://scripts/autoload/piece_manager.gd"
+SoundManager="*res://scripts/autoload/sound_manager.gd"
+HapticManager="*res://scripts/autoload/haptic_manager.gd"
