@@ -58,7 +58,7 @@ export class SoundManager {
     return buffer
   }
 
-  play(name: SoundName, pitchMultiplier = 1.0): void {
+  play(name: SoundName, pitchMultiplier = 1.0, maxDurationSec?: number): void {
     if (!this.enabled || !this.ctx || !this.buffers.has(name)) return
     try {
       // AudioContext가 suspended 상태면 resume
@@ -68,6 +68,10 @@ export class SoundManager {
       source.playbackRate.value = pitchMultiplier
       source.connect(this.ctx.destination)
       source.start(0)
+      // 파일이 너무 길 경우 강제 종료 (예: star.mp3 22초 → 0.5초로 제한)
+      if (maxDurationSec !== undefined && maxDurationSec > 0) {
+        source.stop(this.ctx.currentTime + maxDurationSec / pitchMultiplier)
+      }
     } catch {
       // 무시 (사운드 실패는 게임에 영향 없음)
     }

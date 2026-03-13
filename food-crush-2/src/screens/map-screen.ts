@@ -8,7 +8,6 @@ import stoneMapData from '@/assets/data/stone-map.json'
 /** 레벨별 반지름 오버라이드 (px). 없으면 stone 기반 자동 계산. */
 const LEVEL_RADIUS_OVERRIDE: Record<number, number> = {
   1: 20, 2: 20, 3: 20, 5: 20, 6: 20,
-  4: 36, 13: 36,
 }
 
 interface StoneEntry {

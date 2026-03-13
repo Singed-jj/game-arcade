@@ -282,28 +282,93 @@ export class GameScreen {
     }
   }
 
+  private showRocketDirectionPicker(): Promise<'horizontal' | 'vertical' | null> {
+    return new Promise(resolve => {
+      const overlay = document.createElement('div')
+      overlay.className = 'absolute inset-0 z-50 flex items-center justify-center'
+      overlay.style.background = 'rgba(0,0,0,0.55)'
+
+      const box = document.createElement('div')
+      box.className = 'flex flex-col items-center gap-4 px-8 py-6 rounded-3xl mx-6'
+      box.style.background = 'rgba(20,8,60,0.97)'
+      box.style.boxShadow = '0 0 40px rgba(249,115,22,0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
+      box.style.border = '1px solid rgba(249,115,22,0.25)'
+
+      const title = document.createElement('div')
+      title.textContent = '🚀 방향을 선택하세요'
+      title.className = 'text-white font-bold text-base'
+      box.appendChild(title)
+
+      const btnRow = document.createElement('div')
+      btnRow.className = 'flex gap-4'
+
+      const hBtn = document.createElement('button')
+      hBtn.innerHTML = '<div class="text-2xl">↔</div><div class="text-xs mt-1">가로 줄</div>'
+      hBtn.className = 'flex flex-col items-center px-7 py-4 rounded-2xl text-white font-bold active:scale-95 transition-transform'
+      hBtn.style.background = 'linear-gradient(135deg, #f97316, #ea580c)'
+      hBtn.style.boxShadow = '0 4px 16px rgba(249,115,22,0.4)'
+      hBtn.addEventListener('click', () => { overlay.remove(); resolve('horizontal') })
+
+      const vBtn = document.createElement('button')
+      vBtn.innerHTML = '<div class="text-2xl">↕</div><div class="text-xs mt-1">세로 줄</div>'
+      vBtn.className = 'flex flex-col items-center px-7 py-4 rounded-2xl text-white font-bold active:scale-95 transition-transform'
+      vBtn.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)'
+      vBtn.style.boxShadow = '0 4px 16px rgba(59,130,246,0.4)'
+      vBtn.addEventListener('click', () => { overlay.remove(); resolve('vertical') })
+
+      btnRow.appendChild(hBtn)
+      btnRow.appendChild(vBtn)
+      box.appendChild(btnRow)
+
+      const cancelBtn = document.createElement('button')
+      cancelBtn.textContent = '취소'
+      cancelBtn.className = 'text-white/40 text-xs'
+      cancelBtn.style.cssText = 'background:none;border:none;cursor:pointer;'
+      cancelBtn.addEventListener('click', () => { overlay.remove(); resolve(null) })
+      box.appendChild(cancelBtn)
+
+      overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); resolve(null) } })
+      overlay.appendChild(box)
+      this.container.appendChild(overlay)
+    })
+  }
+
   private async handleCellTap(col: number, row: number): Promise<void> {
     const tool = this.toolBar.getSelectedTool()
     if (!tool) return
 
-    if (!this.toolManager.useTool(tool)) return
-
     this.boardRenderer.lockInput()
     this.stopHint()
+
+    let direction: 'horizontal' | 'vertical' | undefined
+    if (tool === ToolType.ROCKET) {
+      this.boardRenderer.unlockInput()
+      const picked = await this.showRocketDirectionPicker()
+      if (picked === null) {
+        // 취소: 선택 해제 후 복귀
+        this.toolBar.clearSelection()
+        this.boardRenderer.setToolMode(false)
+        this.boardRenderer.unlockInput()
+        this.startHintTimer()
+        return
+      }
+      direction = picked
+      this.boardRenderer.lockInput()
+    }
+
+    if (!this.toolManager.useTool(tool)) {
+      this.toolBar.clearSelection()
+      this.boardRenderer.setToolMode(false)
+      this.boardRenderer.unlockInput()
+      return
+    }
+
     this.toolBar.clearSelection()
     this.boardRenderer.setToolMode(false)
 
     let targets: import('@/core/types').Position[]
     if (tool === ToolType.ROCKET) {
-      const h = getRocketTargets(col, row, 'horizontal')
-      const v = getRocketTargets(col, row, 'vertical')
-      const seen = new Set<string>()
-      targets = [...h, ...v].filter(p => {
-        const k = `${p.col},${p.row}`
-        if (seen.has(k)) return false
-        seen.add(k)
-        return true
-      })
+      targets = getRocketTargets(col, row, direction!)
     } else if (tool === ToolType.BOMB) {
       targets = getBombTargets(col, row)
     } else {
@@ -318,7 +383,7 @@ export class GameScreen {
 
     // Visual effect + sound for tool use
     if (tool === ToolType.ROCKET) {
-      soundManager.play('rocket')
+      soundManager.play('rocket', 1.0, 0.5)
       hapticManager.trigger('rocket')
       this.shake.shake(3)
       await new Promise<void>(resolve => {
@@ -331,7 +396,7 @@ export class GameScreen {
       this.effects.flash('rgba(255,140,0,0.25)')
       this.effects.shockwave({ col, row })
     } else {
-      soundManager.play('rainbow')
+      soundManager.play('rainbow', 1.0, 1.0)
       hapticManager.trigger('rainbow')
       const targetEls = targets
         .map((p: Position) => this.boardRenderer.getBlock(p.col, p.row)?.el)
@@ -380,7 +445,7 @@ export class GameScreen {
     if (this.gameState.areAllGoalsMet()) {
       const stars = this.gameState.calculateStars()
       this.gameState.endLevel()
-      soundManager.play('clear')
+      soundManager.play('clear', 1.0, 2.0)
       hapticManager.trigger('clear')
       await this.sweepRemainingBlocks()
       setTimeout(() => {
@@ -391,7 +456,7 @@ export class GameScreen {
       }, 1000)
     } else if (this.gameState.getRemainingMoves() <= 0) {
       this.gameState.endLevel()
-      soundManager.play('fail')
+      soundManager.play('fail', 1.0, 1.5)
       hapticManager.trigger('fail')
       setTimeout(() => {
         const goalsList = Array.from(this.gameState.getGoals().entries()).map(
@@ -481,7 +546,7 @@ export class GameScreen {
     if (this.gameState.areAllGoalsMet()) {
       const stars = this.gameState.calculateStars()
       this.gameState.endLevel()
-      soundManager.play('clear')
+      soundManager.play('clear', 1.0, 2.0)
       hapticManager.trigger('clear')
       eventBus.emit('game:level-complete', { stars, movesLeft: this.gameState.getRemainingMoves() })
       await this.sweepRemainingBlocks()
@@ -493,7 +558,7 @@ export class GameScreen {
       }, 1000)
     } else if (this.gameState.getRemainingMoves() <= 0) {
       this.gameState.endLevel()
-      soundManager.play('fail')
+      soundManager.play('fail', 1.0, 1.5)
       hapticManager.trigger('fail')
       eventBus.emit('game:level-failed')
       setTimeout(() => {

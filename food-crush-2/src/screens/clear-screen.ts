@@ -59,7 +59,7 @@ export class ClearScreen {
         // 별 표시 타이밍에 맞춰 사운드 재생 (pitch 상승)
         const starIndex = i
         setTimeout(() => {
-          soundManager.play('star', 1.0 + starIndex * 0.15)
+          soundManager.play('star', 1.0 + starIndex * 0.15, 0.5)
           hapticManager.trigger('star')
         }, (0.2 + i * 0.15) * 1000)
       } else {
