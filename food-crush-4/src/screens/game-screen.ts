@@ -36,6 +36,7 @@ export class GameScreen {
   private toolBar!: ToolBar
   private hintTimer: ReturnType<typeof setTimeout> | null = null
   private urgentOverlay: HTMLElement | null = null
+  private eventCleanups: Array<() => void> = []
 
   constructor(
     private container: HTMLElement,
@@ -254,14 +255,34 @@ export class GameScreen {
 
   private setupEventListeners(): void {
     this.boardRenderer.unlockInput()
-    eventBus.on('board:swap-requested', ({ from, to }) => this.handleSwap(from, to))
-    eventBus.on('board:cell-tapped', ({ col, row }) => this.handleCellTap(col, row))
-    eventBus.on('tool:selected', () => {
+
+    const onSwap = ({ from, to }: { from: Position; to: Position }) => this.handleSwap(from, to)
+    const onCellTap = ({ col, row }: { col: number; row: number }) => this.handleCellTap(col, row)
+    const onToolSelected = () => {
       const tool = this.toolBar.getSelectedTool()
       this.boardRenderer.setToolMode(tool !== null)
-    })
-    eventBus.on('game:urgent-mode', ({ urgent }) => this.setUrgentOverlay(urgent))
+    }
+    const onUrgentMode = ({ urgent }: { urgent: boolean }) => this.setUrgentOverlay(urgent)
+
+    eventBus.on('board:swap-requested', onSwap)
+    eventBus.on('board:cell-tapped', onCellTap)
+    eventBus.on('tool:selected', onToolSelected)
+    eventBus.on('game:urgent-mode', onUrgentMode)
+
+    this.eventCleanups.push(
+      () => eventBus.off('board:swap-requested', onSwap),
+      () => eventBus.off('board:cell-tapped', onCellTap),
+      () => eventBus.off('tool:selected', onToolSelected),
+      () => eventBus.off('game:urgent-mode', onUrgentMode),
+    )
+
     this.startHintTimer()
+  }
+
+  destroy(): void {
+    this.stopHint()
+    for (const cleanup of this.eventCleanups) cleanup()
+    this.eventCleanups = []
   }
 
   private setUrgentOverlay(urgent: boolean): void {

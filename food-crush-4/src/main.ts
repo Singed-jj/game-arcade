@@ -25,6 +25,7 @@ class App {
   private save: SaveData
   private currentScreen: string = ''
   private ticker: TickerBanner
+  private currentGameScreen: GameScreen | null = null
 
   constructor() {
     this.app = document.getElementById('app')!
@@ -68,6 +69,8 @@ class App {
   }
 
   private changeScreen(screen: string, data?: Record<string, unknown>): void {
+    this.currentGameScreen?.destroy()
+    this.currentGameScreen = null
     this.app.innerHTML = ''
     this.currentScreen = screen
 
@@ -79,7 +82,7 @@ class App {
         new MapScreen(this.app, this.save, this.heartManager, this.pieceManager)
         break
       case 'game':
-        new GameScreen(this.app, this.gameState, this.heartManager, this.toolManager, data)
+        this.currentGameScreen = new GameScreen(this.app, this.gameState, this.heartManager, this.toolManager, data)
         break
       case 'clear':
         new ClearScreen(this.app, this.pieceManager, data)
