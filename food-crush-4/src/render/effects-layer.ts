@@ -88,11 +88,11 @@ export class EffectsLayer {
       this.tweens.push(this.makeBombRingTween(cx, cy, i, now + i * 40))
     }
 
-    // 3) 화이트 임팩트 플래시 (첫 70ms) — canvas 전체
+    // 3) 화이트 임팩트 플래시 (첫 160ms) — canvas 전체
     this.tweens.push((ctx, t) => {
       const elapsed = t - now
-      if (elapsed > 70) return false
-      const alpha = 0.75 * (1 - elapsed / 70)
+      if (elapsed > 160) return false
+      const alpha = 0.75 * (1 - elapsed / 160)
       ctx.fillStyle = `rgba(255,255,220,${alpha})`
       ctx.fillRect(0, 0, this.canvas.width, this.canvas.height)
       return true
@@ -101,12 +101,12 @@ export class EffectsLayer {
     // 3b) 즉각 충격파 링 (t=0, 매우 빠른 대형 링)
     this.tweens.push(this.makeImpactRingTween(cx, cy, now))
 
-    // 3c) 잔열 발광 애프터글로우 (320ms ~ 620ms)
+    // 3c) 잔열 발광 애프터글로우 (300ms ~ 800ms)
     this.tweens.push((ctx, t) => {
       const elapsed = t - now - 300
       if (elapsed < 0) return true
-      if (elapsed > 320) return false
-      const alpha = 0.35 * (1 - elapsed / 320)
+      if (elapsed > 500) return false
+      const alpha = 0.35 * (1 - elapsed / 500)
       const radius = CELL_SIZE * 2.5
       const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius)
       grad.addColorStop(0,   `rgba(255,180,40,${alpha})`)
@@ -137,9 +137,9 @@ export class EffectsLayer {
       }
     }, 100)
 
-    // 4) 불꽃 파티클 (80개, 고속)
+    // 4) 불꽃 파티클 (36개, 고속 — 모바일 성능 최적화)
     const fireColors = ['#ff6600', '#ff9900', '#ffcc00', '#ff4400', '#ff2200', '#ffee00', '#ff8800', '#ffdd00']
-    for (let i = 0; i < 80; i++) {
+    for (let i = 0; i < 36; i++) {
       const angle = Math.random() * Math.PI * 2
       const speed = 4 + Math.random() * 11
       const color = fireColors[Math.floor(Math.random() * fireColors.length)]
@@ -153,9 +153,9 @@ export class EffectsLayer {
       })
     }
 
-    // 5) 연기 파티클 (25개, 큰 구체)
+    // 5) 연기 파티클 (12개, 큰 구체)
     const smokeColors = ['#665544', '#554433', '#443322', '#776655', '#997755']
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 12; i++) {
       const angle = -Math.PI / 2 + (Math.random() - 0.5) * 2.0
       const speed = 0.6 + Math.random() * 2.5
       const color = smokeColors[Math.floor(Math.random() * smokeColors.length)]
@@ -199,7 +199,7 @@ export class EffectsLayer {
       })
     }
 
-    return new Promise(resolve => setTimeout(resolve, 480))
+    return new Promise(resolve => setTimeout(resolve, 550))
   }
 
   private makeImpactRingTween(cx: number, cy: number, startTime: number): TweenFn {
