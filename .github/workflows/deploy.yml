@@ -60,6 +60,7 @@ jobs:
             echo "  $game: $result"
           done
 
+
   # ─────────────────────────────────────────────────────────────────
   # 공통 배포 스텝 (static Godot export)
   # ─────────────────────────────────────────────────────────────────
@@ -210,7 +211,7 @@ jobs:
   deploy-portal:
     name: Deploy portal
     needs: detect-changes
-    if: needs.detect-changes.outputs.portal == 'true'
+    if: needs.detect-changes.outputs.portal == 'true' || needs.detect-changes.outputs.food-crush-4 == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
