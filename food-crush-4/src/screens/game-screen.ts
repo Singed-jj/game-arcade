@@ -426,9 +426,9 @@ export class GameScreen {
     } else if (tool === ToolType.BOMB) {
       soundManager.play('bomb', 1.0, 1.0)
       hapticManager.trigger('bomb')
-      this.shake.shake(5)
-      this.effects.flash('rgba(255,140,0,0.25)')
-      this.effects.shockwave({ col, row })
+      this.shake.shake(6)
+      this.effects.flash('rgba(255,180,0,0.35)')
+      await this.effects.bombExplosion({ col, row })
     } else {
       soundManager.play('rainbow', 1.0, 1.5)
       hapticManager.trigger('rainbow')

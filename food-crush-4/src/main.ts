@@ -102,6 +102,9 @@ class App {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  debug(): any { return { tm: this.toolManager, hm: this.heartManager } }
+
   private persistSave(): void {
     this.save.hearts = this.heartManager.getHearts()
     this.save.heartsLastUsedAt = this.heartManager.getLastUsedAt()
@@ -111,6 +114,7 @@ class App {
   }
 }
 
-new App();
+const app = new App();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ;(window as any).__eb = eventBus
+;(window as any).__app = app
