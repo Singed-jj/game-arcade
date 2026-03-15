@@ -49,7 +49,7 @@ export class GameScreen {
     const config = getLevelConfig(level)
 
     if (!heartManager.useHeart()) {
-      eventBus.emit('screen:change', { screen: 'map' })
+      eventBus.emit('screen:change', { screen: 'no-hearts' })
       return
     }
 
@@ -384,6 +384,18 @@ export class GameScreen {
       this.boardRenderer.lockInput()
     }
 
+    // 무지개: useTool 전에 빈 셀 검사 (빈 셀 탭 시 도구 소모 방지)
+    if (tool === ToolType.RAINBOW) {
+      const blockType = this.boardLogic.getBlock(col, row)
+      if (blockType === -1) {
+        this.toolBar.clearSelection()
+        this.boardRenderer.setToolMode(false)
+        this.boardRenderer.unlockInput()
+        this.startHintTimer()
+        return
+      }
+    }
+
     if (!this.toolManager.useTool(tool)) {
       this.toolBar.clearSelection()
       this.boardRenderer.setToolMode(false)
@@ -400,13 +412,9 @@ export class GameScreen {
     } else if (tool === ToolType.BOMB) {
       targets = getBombTargets(col, row)
     } else {
-      // rainbow: target block type at clicked cell
-      const blockType = this.boardLogic.getBlock(col, row)
-      if (blockType === -1) {
-        this.boardRenderer.unlockInput()
-        return
-      }
-      targets = getRainbowTargets(this.boardLogic.getBoard(), blockType as import('@/core/types').BlockType)
+      // 무지개: 탭한 셀과 같은 타입의 블록 전부 제거
+      const blockType = this.boardLogic.getBlock(col, row) as import('@/core/types').BlockType
+      targets = getRainbowTargets(this.boardLogic.getBoard(), blockType)
     }
 
     // Visual effect + sound for tool use
