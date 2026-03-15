@@ -14,6 +14,7 @@ on:
           - ''
           - food-crush
           - food-crush-2
+          - food-crush-4
           - block-blast-2
           - royal-puzzle-4
           - township
@@ -30,6 +31,7 @@ jobs:
     outputs:
       food-crush: ${{ steps.changes.outputs.food-crush }}
       food-crush-2: ${{ steps.changes.outputs.food-crush-2 }}
+      food-crush-4: ${{ steps.changes.outputs.food-crush-4 }}
       block-blast-2: ${{ steps.changes.outputs.block-blast-2 }}
       royal-puzzle-4: ${{ steps.changes.outputs.royal-puzzle-4 }}
       township: ${{ steps.changes.outputs.township }}
@@ -48,7 +50,7 @@ jobs:
           echo "Changed files:"
           echo "$CHANGED"
 
-          for game in food-crush food-crush-2 block-blast-2 royal-puzzle-4 township last-war-survival portal; do
+          for game in food-crush food-crush-2 food-crush-4 block-blast-2 royal-puzzle-4 township last-war-survival portal; do
             if [ -n "$FORCE" ]; then
               [ "$game" = "$FORCE" ] && result=true || result=false
             else
@@ -102,6 +104,26 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_FOOD_CRUSH_2 }}
+
+  deploy-food-crush-4:
+    name: Deploy food-crush-4
+    needs: detect-changes
+    if: needs.detect-changes.outputs.food-crush-4 == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install -g vercel@latest
+      - run: vercel pull --yes --environment=production --token ${{ secrets.VERCEL_TOKEN }} --cwd food-crush-4/
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: prj_Dve5bi5lxvzy8H1GMXUjsXhgJDFn
+      - run: vercel deploy --prod --yes --token ${{ secrets.VERCEL_TOKEN }} --cwd food-crush-4/
+        env:
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: prj_Dve5bi5lxvzy8H1GMXUjsXhgJDFn
 
   # 사전 준비: GitHub Secret 'VERCEL_PROJECT_ID_BLOCK_BLAST_2' 설정 필요
   deploy-block-blast-2:
