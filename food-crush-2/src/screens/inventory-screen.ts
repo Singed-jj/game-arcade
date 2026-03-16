@@ -60,7 +60,9 @@ export class InventoryScreen {
 
     for (const tool of TOOLS) {
       const count = toolManager.getCount(tool.type)
-      grid.appendChild(this.buildCard(tool, count))
+      const card = this.buildCard(tool, count)
+      card.dataset.toolCount = tool.type
+      grid.appendChild(card)
     }
     content.appendChild(grid)
 
@@ -86,9 +88,53 @@ export class InventoryScreen {
     tipBox.appendChild(tipBody)
     content.appendChild(tipBox)
 
+    // 🧪 테스트 아이템 발급 섹션
+    const testSection = document.createElement('div')
+    testSection.className = 'w-full rounded-2xl p-4 mt-6'
+    testSection.style.background = 'rgba(0,0,0,0.25)'
+
+    const testTitle = document.createElement('div')
+    testTitle.textContent = '🧪 테스트 전용'
+    testTitle.className = 'text-yellow-300 font-bold text-xs mb-3'
+    testSection.appendChild(testTitle)
+
+    const testBtns = document.createElement('div')
+    testBtns.className = 'flex gap-2'
+
+    const testTools: { type: ToolType; label: string }[] = [
+      { type: ToolType.ROCKET, label: '🚀 로켓 받기' },
+      { type: ToolType.BOMB, label: '💣 폭탄 받기' },
+      { type: ToolType.RAINBOW, label: '🌈 무지개 받기' },
+    ]
+
+    for (const t of testTools) {
+      const btn = document.createElement('button')
+      btn.textContent = t.label
+      btn.className = 'flex-1 py-2 rounded-xl text-xs font-bold text-white active:scale-95 transition-transform'
+      btn.style.background = 'rgba(255,255,255,0.15)'
+      btn.addEventListener('click', () => {
+        toolManager.addTool(t.type, 1)
+        // 카드 실시간 갱신
+        const cards = grid.querySelectorAll<HTMLElement>('[data-tool-count]')
+        cards.forEach(card => {
+          const toolType = card.dataset.toolCount as ToolType
+          const countEl = card.querySelector<HTMLElement>('[data-count-label]')
+          if (countEl) {
+            const c = toolManager.getCount(toolType)
+            countEl.textContent = c > 0 ? `× ${c}` : '없음'
+            card.style.opacity = c > 0 ? '1' : '0.4'
+          }
+        })
+      })
+      testBtns.appendChild(btn)
+    }
+
+    testSection.appendChild(testBtns)
+    content.appendChild(testSection)
+
     // 하단 안내 문구
     const footer = document.createElement('div')
-    footer.className = 'text-white/60 text-xs text-center leading-relaxed'
+    footer.className = 'text-white/60 text-xs text-center leading-relaxed mt-6'
     footer.innerHTML = '도구가 없다면? 뽑기에서 획득 가능!<br>(조각 5개 모으면 뽑기 1회)'
     content.appendChild(footer)
 
@@ -110,6 +156,7 @@ export class InventoryScreen {
 
     const countEl = document.createElement('div')
     countEl.className = 'text-2xl font-bold text-white mb-1'
+    countEl.dataset.countLabel = ''
     countEl.textContent = count > 0 ? `× ${count}` : '없음'
 
     const name = document.createElement('div')
