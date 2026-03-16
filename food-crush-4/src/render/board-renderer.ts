@@ -21,6 +21,8 @@ export class BoardRenderer {
 
   private readonly boardWidth = BOARD_COLS * CELL_SIZE
   private readonly boardHeight = BOARD_ROWS * CELL_SIZE
+  private boardOffsetX = 0
+  private boardOffsetY = 0
 
   constructor(domContainer: HTMLElement) {
     this.domContainer = domContainer
@@ -31,15 +33,17 @@ export class BoardRenderer {
     app.stage.addChild(this.pixiContainer)
     this.setupBackground()
     this.updateBoardPosition()
-    window.addEventListener('resize', () => this.updateBoardPosition())
+    new ResizeObserver(() => this.updateBoardPosition()).observe(this.domContainer)
     this.setupInput()
   }
 
   private updateBoardPosition(): void {
     const w = this.domContainer.clientWidth || 375
     const h = this.domContainer.clientHeight || 600
-    this.pixiContainer.x = Math.max(0, (w - this.boardWidth) / 2)
-    this.pixiContainer.y = Math.max(0, (h - this.boardHeight) / 2)
+    this.boardOffsetX = Math.max(0, (w - this.boardWidth) / 2)
+    this.boardOffsetY = Math.max(0, (h - this.boardHeight) / 2)
+    this.pixiContainer.x = this.boardOffsetX
+    this.pixiContainer.y = this.boardOffsetY
   }
 
   private setupBackground(): void {
@@ -174,10 +178,8 @@ export class BoardRenderer {
 
   private posFromEvent(e: PointerEvent): Position | null {
     const rect = this.domContainer.getBoundingClientRect()
-    const offsetX = Math.max(0, (rect.width - this.boardWidth) / 2)
-    const offsetY = Math.max(0, (rect.height - this.boardHeight) / 2)
-    const col = Math.floor((e.clientX - rect.left - offsetX) / CELL_SIZE)
-    const row = Math.floor((e.clientY - rect.top - offsetY) / CELL_SIZE)
+    const col = Math.floor((e.clientX - rect.left - this.boardOffsetX) / CELL_SIZE)
+    const row = Math.floor((e.clientY - rect.top - this.boardOffsetY) / CELL_SIZE)
     if (col < 0 || col >= BOARD_COLS || row < 0 || row >= BOARD_ROWS) return null
     return { col, row }
   }
@@ -195,8 +197,8 @@ export class BoardRenderer {
     b.pos = { col: from.col, row: from.row }
 
     await Promise.all([
-      new Promise<void>(r => gsap.to(a, { x: a.pos.col * CELL_SIZE + 3, y: a.pos.row * CELL_SIZE + 3, duration: 0.16, onComplete: r })),
-      new Promise<void>(r => gsap.to(b, { x: b.pos.col * CELL_SIZE + 3, y: b.pos.row * CELL_SIZE + 3, duration: 0.16, onComplete: r })),
+      new Promise<void>(r => gsap.to(a, { x: (a.pos.col + 0.5) * CELL_SIZE, y: (a.pos.row + 0.5) * CELL_SIZE, duration: 0.16, onComplete: r })),
+      new Promise<void>(r => gsap.to(b, { x: (b.pos.col + 0.5) * CELL_SIZE, y: (b.pos.row + 0.5) * CELL_SIZE, duration: 0.16, onComplete: r })),
     ])
   }
 

@@ -417,63 +417,117 @@ export class GameScreen {
       targets = getRainbowTargets(this.boardLogic.getBoard(), blockType)
     }
 
-    // Visual effect + sound for tool use
+    // ── 로켓 ──────────────────────────────────────────────────────────
     if (tool === ToolType.ROCKET) {
       soundManager.play('rocket')
       hapticManager.trigger('rocket')
       this.shake.shake(3)
       await this.animateRocketLaunch(col, row, direction!, targets)
+      // animateRocketLaunch가 경로상 블록을 이미 pop + renderer에서 제거
+
+      const counts = new Map<import('@/core/types').BlockType, number>()
+      for (const pos of targets) {
+        const bt = this.boardLogic.getBlock(pos.col, pos.row)
+        if (bt !== -1) counts.set(bt as import('@/core/types').BlockType, (counts.get(bt as import('@/core/types').BlockType) ?? 0) + 1)
+      }
+      this.gameState.useMove()
+      const cascades = this.boardLogic.removeCells(targets)
+      for (const cascade of cascades) {
+        for (const match of cascade.matches) counts.set(match.blockType, (counts.get(match.blockType) ?? 0) + match.cells.length)
+      }
+      for (const [type, count] of counts) this.gameState.addGoalProgress(type, count)
+      this.gameState.addScore(targets.length * 20)
+
+      await new Promise(r => setTimeout(r, 100))
+      for (let i = 0; i < cascades.length; i++) await this.animateCascadeStep(cascades[i], i)
+
+    // ── 폭탄 ──────────────────────────────────────────────────────────
     } else if (tool === ToolType.BOMB) {
       soundManager.play('bomb', 1.0, 1.0)
       hapticManager.trigger('bomb')
       this.shake.shake(6)
       this.effects.flash('rgba(255,180,0,0.35)')
-      await this.effects.bombExplosion({ col, row })
+
+      // 폭발 이펙트 시작 (await 하지 않음 — 팝 애니메이션과 병렬)
+      const explosionPromise = this.effects.bombExplosion({ col, row })
+
+      // 대상 블록 팝 애니메이션 + 파티클 동시 시작
+      const counts = new Map<import('@/core/types').BlockType, number>()
+      const toolPopPromises: Promise<void>[] = []
+      for (const pos of targets) {
+        const view = this.boardRenderer.getBlock(pos.col, pos.row)
+        const bt = this.boardLogic.getBlock(pos.col, pos.row)
+        if (bt !== -1) {
+          this.effects.spawnBlockPop(pos, bt as import('@/core/types').BlockType)
+          counts.set(bt as import('@/core/types').BlockType, (counts.get(bt as import('@/core/types').BlockType) ?? 0) + 1)
+        }
+        if (view) toolPopPromises.push(view.animatePop())
+      }
+
+      this.gameState.useMove()
+      const cascades = this.boardLogic.removeCells(targets)
+      for (const cascade of cascades) {
+        for (const match of cascade.matches) counts.set(match.blockType, (counts.get(match.blockType) ?? 0) + match.cells.length)
+      }
+      for (const [type, count] of counts) this.gameState.addGoalProgress(type, count)
+      this.gameState.addScore(targets.length * 20)
+
+      // 팝 애니메이션 완료 후 스프라이트 제거
+      await Promise.all(toolPopPromises)
+      for (const pos of targets) this.boardRenderer.removeBlock(pos.col, pos.row)
+
+      // 폭발 이펙트 완료 대기
+      await explosionPromise
+      for (let i = 0; i < cascades.length; i++) await this.animateCascadeStep(cascades[i], i)
+
+    // ── 무지개 ────────────────────────────────────────────────────────
     } else {
       soundManager.play('rainbow', 1.0, 1.5)
       hapticManager.trigger('rainbow')
+
       if (targets.length > 0) {
-        await this.effects.rainbowSuckIn(
-          targets,
-          this.effects.boardCenterX,
-          this.effects.boardCenterY
-        )
+        // Board center in Pixi container local coordinates
+        const boardCenterPx = (BOARD_COLS / 2) * CELL_SIZE
+        const boardCenterPy = (BOARD_ROWS / 2) * CELL_SIZE
+
+        // 블록 스프라이트를 board center로 수렴 (food-crush-2 스타일) + Canvas 파티클
+        const suckInPromises: Promise<void>[] = []
+        for (let idx = 0; idx < targets.length; idx++) {
+          const pos = targets[idx]
+          const view = this.boardRenderer.getBlock(pos.col, pos.row)
+          const bt = this.boardLogic.getBlock(pos.col, pos.row)
+          if (bt !== -1) this.effects.spawnBlockPop(pos, bt as import('@/core/types').BlockType)
+          if (view) suckInPromises.push(view.animateSuckIn(boardCenterPx, boardCenterPy, idx * 15))
+        }
+        // Canvas 파티클도 함께 수렴
+        this.effects.rainbowSuckIn(targets, this.effects.boardCenterX, this.effects.boardCenterY)
+
+        await Promise.all(suckInPromises)
         this.effects.flash('rgba(180,0,255,0.3)')
         this.shake.shake(6, 300)
       }
-    }
 
-    // Count block types BEFORE removal
-    const counts = new Map<import('@/core/types').BlockType, number>()
-    for (const pos of targets) {
-      const bt = this.boardLogic.getBlock(pos.col, pos.row)
-      if (bt !== -1) {
-        if (tool !== ToolType.ROCKET) {
-          this.effects.spawnBlockPop(pos, bt as import('@/core/types').BlockType)
-        }
-        counts.set(bt as import('@/core/types').BlockType, (counts.get(bt as import('@/core/types').BlockType) ?? 0) + 1)
+      const counts = new Map<import('@/core/types').BlockType, number>()
+      for (const pos of targets) {
+        const bt = this.boardLogic.getBlock(pos.col, pos.row)
+        if (bt !== -1) counts.set(bt as import('@/core/types').BlockType, (counts.get(bt as import('@/core/types').BlockType) ?? 0) + 1)
       }
-    }
 
-    this.gameState.useMove()
-
-    const cascades = this.boardLogic.removeCells(targets)
-
-    // Also count cascade matches
-    for (const cascade of cascades) {
-      for (const match of cascade.matches) {
-        counts.set(match.blockType, (counts.get(match.blockType) ?? 0) + match.cells.length)
+      this.gameState.useMove()
+      const cascades = this.boardLogic.removeCells(targets)
+      for (const cascade of cascades) {
+        for (const match of cascade.matches) counts.set(match.blockType, (counts.get(match.blockType) ?? 0) + match.cells.length)
       }
+      for (const [type, count] of counts) this.gameState.addGoalProgress(type, count)
+      this.gameState.addScore(targets.length * 20)
+
+      // 스프라이트는 animateSuckIn이 이미 destroy → map에서만 제거
+      for (const pos of targets) this.boardRenderer.removeBlock(pos.col, pos.row)
+      for (let i = 0; i < cascades.length; i++) await this.animateCascadeStep(cascades[i], i)
     }
 
-    for (const [type, count] of counts) {
-      this.gameState.addGoalProgress(type, count)
-    }
-    this.gameState.addScore(targets.length * 20)
-
-    await new Promise(r => setTimeout(r, tool === ToolType.ROCKET ? 100 : 400))
-
-    this.boardRenderer.renderBoard(this.boardLogic.getBoard(), true)
+    // 최종 상태 동기화 (handleSwap과 동일 패턴)
+    this.boardRenderer.renderBoard(this.boardLogic.getBoard(), false)
 
     if (this.gameState.areAllGoalsMet()) {
       const stars = this.gameState.calculateStars()
@@ -866,10 +920,11 @@ export class GameScreen {
     }
     await Promise.all(dropPromises)
 
-    // 3) 새 블록 spawn 애니메이션
+    // 3) 새 블록 drop 애니메이션 (위에서 행 순서로 순차 낙하)
+    const spawnDropPromises: Promise<void>[] = []
     for (const s of step.spawned) {
       const view = this.boardRenderer.addBlock(s.pos, s.blockType)
-      view.spawnAnimate()
+      spawnDropPromises.push(view.animateDrop(-1, s.pos.row * 30))
     }
 
     // 4) 점수 float + cascade 텍스트
@@ -903,8 +958,8 @@ export class GameScreen {
       this.effects.showScoreFloat(Math.round(score), px, py)
     }
 
-    // spawn 애니메이션 완료 대기 (0.22s)
-    await new Promise(r => setTimeout(r, 250))
+    // 낙하 애니메이션 완료 대기 (최소 50ms 버퍼)
+    await Promise.all([...spawnDropPromises, new Promise<void>(r => setTimeout(r, 50))])
   }
 
   private async sweepRemainingBlocks(): Promise<void> {

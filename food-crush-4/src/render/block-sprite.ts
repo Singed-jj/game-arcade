@@ -18,6 +18,10 @@ export class BlockSprite extends Container {
   constructor(public blockType: BlockType, public pos: Position) {
     super()
     const size = CELL_SIZE - 6
+    const halfSize = size / 2
+
+    // pivot을 블록 중심으로 설정 → scale 기준점 = 블록 중심
+    this.pivot.set(halfSize, halfSize)
 
     this.bg = new Graphics()
     this.bg.roundRect(0, 0, size, size, 10)
@@ -29,16 +33,33 @@ export class BlockSprite extends Container {
       style: { fontSize: CELL_SIZE * 0.55 }
     })
     this.emojiLabel.anchor.set(0.5)
-    this.emojiLabel.x = size / 2
-    this.emojiLabel.y = size / 2
+    this.emojiLabel.x = halfSize
+    this.emojiLabel.y = halfSize
     this.addChild(this.emojiLabel)
 
     this.updatePosition()
   }
 
   updatePosition(): void {
-    this.x = this.pos.col * CELL_SIZE + 3
-    this.y = this.pos.row * CELL_SIZE + 3
+    this.x = (this.pos.col + 0.5) * CELL_SIZE
+    this.y = (this.pos.row + 0.5) * CELL_SIZE
+  }
+
+  animateSuckIn(centerX: number, centerY: number, delayMs = 0): Promise<void> {
+    return new Promise(resolve => {
+      gsap.to(this, {
+        x: centerX, y: centerY, alpha: 0,
+        duration: 0.38, delay: delayMs / 1000, ease: 'power2.in',
+        onComplete: () => {
+          if (!this.destroyed) this.destroy({ children: true })
+          resolve()
+        }
+      })
+      gsap.to(this.scale, {
+        x: 0.15, y: 0.15,
+        duration: 0.38, delay: delayMs / 1000, ease: 'power2.in',
+      })
+    })
   }
 
   animatePop(): Promise<void> {
@@ -58,15 +79,22 @@ export class BlockSprite extends Container {
     })
   }
 
-  animateDrop(fromRow: number): Promise<void> {
-    const targetY = this.pos.row * CELL_SIZE + 3
-    const startY = fromRow * CELL_SIZE + 3
-    this.y = startY
+  animateDrop(fromRow: number, delayMs = 0): Promise<void> {
+    const targetY = (this.pos.row + 0.5) * CELL_SIZE
+    const startY = (fromRow + 0.5) * CELL_SIZE
     return new Promise(resolve => {
-      gsap.to(this, {
-        y: targetY, duration: 0.18, ease: 'bounce.out',
-        onComplete: resolve
-      })
+      if (delayMs <= 0) {
+        this.y = startY
+        gsap.to(this, { y: targetY, duration: 0.18, ease: 'bounce.out', onComplete: resolve })
+      } else {
+        this.alpha = 0
+        gsap.delayedCall(delayMs / 1000, () => {
+          if (this.destroyed) { resolve(); return }
+          this.y = startY
+          this.alpha = 1
+          gsap.to(this, { y: targetY, duration: 0.18, ease: 'bounce.out', onComplete: resolve })
+        })
+      }
     })
   }
 

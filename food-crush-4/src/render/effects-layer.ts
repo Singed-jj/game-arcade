@@ -26,6 +26,10 @@ export class EffectsLayer {
     this.canvas.height = container.clientHeight
     container.appendChild(this.canvas)
     this.ctx = this.canvas.getContext('2d')!
+    new ResizeObserver(() => {
+      this.canvas.width = container.clientWidth
+      this.canvas.height = container.clientHeight
+    }).observe(container)
     this.tick()
   }
 
