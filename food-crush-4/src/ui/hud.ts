@@ -93,11 +93,18 @@ export class HUD {
 
     this.el.appendChild(rightGroup)
 
-    eventBus.on('heart:changed', ({ current }) => this.updateHearts(current))
-    eventBus.on('piece:changed', ({ current }) => this.updatePieces(current))
-
-    // 화면 전환 시 인터벌 정리
-    eventBus.on('screen:change', () => this.stopRecoveryTimer())
+    const onHeartChanged = ({ current }: { current: number }) => this.updateHearts(current)
+    const onPieceChanged = ({ current }: { current: number }) => this.updatePieces(current)
+    const onScreenChange = () => {
+      this.stopRecoveryTimer()
+      eventBus.off('heart:changed', onHeartChanged)
+      eventBus.off('piece:changed', onPieceChanged)
+      eventBus.off('screen:change', onScreenChange)
+    }
+    eventBus.on('heart:changed', onHeartChanged)
+    eventBus.on('piece:changed', onPieceChanged)
+    // 화면 전환 시 인터벌 정리 + 모든 리스너 해제
+    eventBus.on('screen:change', onScreenChange)
   }
 
   updateHearts(count: number): void {

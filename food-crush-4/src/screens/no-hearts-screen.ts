@@ -96,11 +96,9 @@ export class NoHeartsScreen {
       t.textContent = '❤️❤️❤️ 하트 3개 회복! 🎟️ 조각 3개 지급!'
       t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(20,120,40,0.95);color:white;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:bold;z-index:9999;white-space:nowrap;'
       document.body.appendChild(t)
-      setTimeout(() => {
-        t.remove()
-        const nextScreen = pieceManager.canGacha() ? 'gacha' : 'map'
-        eventBus.emit('screen:change', { screen: nextScreen })
-      }, 1500)
+      setTimeout(() => t.remove(), 1500)
+      const nextScreen = pieceManager.canGacha() ? 'gacha' : 'map'
+      eventBus.emit('screen:change', { screen: nextScreen })
     })
     card.appendChild(orderBtn)
 
@@ -139,11 +137,9 @@ export class NoHeartsScreen {
       t.textContent = '❤️ 하트 +1 · 🎟️ 조각 +1 받았어요!'
       t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(20,100,180,0.95);color:white;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:bold;z-index:9999;white-space:nowrap;'
       document.body.appendChild(t)
-      setTimeout(() => {
-        t.remove()
-        const nextScreen = pieceManager.canGacha() ? 'gacha' : 'map'
-        eventBus.emit('screen:change', { screen: nextScreen })
-      }, 1500)
+      setTimeout(() => t.remove(), 1500)
+      const nextScreen = pieceManager.canGacha() ? 'gacha' : 'map'
+      eventBus.emit('screen:change', { screen: nextScreen })
     })
     card.appendChild(shareBlock)
 
