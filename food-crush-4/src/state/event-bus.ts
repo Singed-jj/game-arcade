@@ -68,7 +68,8 @@ class EventBus {
     event: K,
     ...args: GameEventMap[K] extends void ? [] : [GameEventMap[K]]
   ): void {
-    for (const handler of this.listeners.get(event) ?? []) {
+    const handlers = [...(this.listeners.get(event) ?? [])]
+    for (const handler of handlers) {
       handler(...args)
     }
   }
